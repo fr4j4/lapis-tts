@@ -1,0 +1,12 @@
+{
+  "name": "whisper",
+  "description": "Susurro realista con ambiente íntimo",
+  "type": "ffmpeg",
+  "filters": [
+    "highpass=f=600",
+    "treble=g=6:f=2500",
+    "bass=g=-8:f=200",
+    "aecho=0.7:0.8:25:0.15",
+    "loudnorm=I=-16:TP=-1.5:LRA=11"
+  ]
+}

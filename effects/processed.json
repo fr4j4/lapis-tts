@@ -1,0 +1,13 @@
+{
+  "name": "processed",
+  "description": "Efecto de radio o laboratorio, sonido procesado",
+  "type": "ffmpeg",
+  "filters": [
+    "bass=g=5:f=150",
+    "highpass=f=180",
+    "lowpass=f=7000",
+    "aecho=0.5:0.6:40:0.3",
+    "volume=+2dB",
+    "loudnorm=I=-16:TP=-1.5:LRA=11"
+  ]
+}

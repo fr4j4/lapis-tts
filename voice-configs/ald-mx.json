@@ -1,0 +1,28 @@
+{
+  "voice_id": "ald-mx",
+  "name": "Ald Mexican",
+  "description": "Medium-quality Mexican Spanish voice. Warm and expressive.",
+  "model": "es_MX-ald-medium",
+  "active": true,
+  "params": {
+    "length_scale": 0.95,
+    "noise_scale": 0.6,
+    "noise_w_scale": 0.7
+  },
+  "segment_silence": 0.08,
+  "crossfade": 0.03,
+  "global_effects": [],
+  "modes": {
+    "normal":    { "effects": ["normal"] },
+    "whisper":   { "effects": ["whisper"] },
+    "breathy":   { "effects": ["breathy"] },
+    "emphatic":  { "effects": ["emphatic"] },
+    "radio":     { "effects": ["radio"] },
+    "processed": { "effects": ["processed"] },
+    "robotic":   { "effects": ["processed", "radio"] },
+    "menacing":  { "effects": ["emphatic", "processed"] },
+    "warm":      { "effects": ["breathy", "normal"] },
+    "dramatic":  { "effects": ["emphatic", "processed"] },
+    "intimate":  { "effects": ["whisper", "breathy"] }
+  }
+}

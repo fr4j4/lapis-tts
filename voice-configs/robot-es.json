@@ -1,0 +1,28 @@
+{
+  "voice_id": "robot-es",
+  "name": "Robot Spanish",
+  "description": "Robotic, synthetic voice in Spanish. For testing robotic effects.",
+  "model": "es_ES-davefx-medium",
+  "active": false,
+  "params": {
+    "length_scale": 0.95,
+    "noise_scale": 0.5,
+    "noise_w_scale": 0.6
+  },
+  "segment_silence": 0.2,
+  "crossfade": 0,
+  "global_effects": ["processed"],
+  "modes": {
+    "normal":    { "effects": ["normal"] },
+    "whisper":   { "effects": ["whisper"] },
+    "breathy":   { "effects": ["breathy"] },
+    "emphatic":  { "effects": ["emphatic"] },
+    "radio":     { "effects": ["radio"] },
+    "processed": { "effects": ["processed"] },
+    "robotic":   { "effects": ["processed", "radio"] },
+    "menacing":  { "effects": ["emphatic", "processed"] },
+    "warm":      { "effects": ["breathy", "normal"] },
+    "dramatic":  { "effects": ["emphatic", "processed"] },
+    "intimate":  { "effects": ["whisper", "breathy"] }
+  }
+}

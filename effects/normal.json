@@ -1,0 +1,11 @@
+{
+  "name": "normal",
+  "description": "Voz base con cuerpo y ambiente natural",
+  "type": "ffmpeg",
+  "filters": [
+    "bass=g=2:f=200",
+    "aecho=0.3:0.4:15:0.15",
+    "highpass=f=150",
+    "loudnorm=I=-16:TP=-1.5:LRA=11"
+  ]
+}

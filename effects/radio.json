@@ -1,0 +1,12 @@
+{
+  "name": "radio",
+  "description": "Efecto de interfono o transmisión radial",
+  "type": "ffmpeg",
+  "filters": [
+    "highpass=f=500",
+    "lowpass=f=3500",
+    "acompressor=threshold=-30dB:ratio=10:attack=10:release=50",
+    "volume=+8dB",
+    "loudnorm=I=-16:TP=-1.5:LRA=11"
+  ]
+}

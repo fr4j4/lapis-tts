@@ -1,0 +1,28 @@
+{
+  "voice_id": "amy-en",
+  "name": "Amy English",
+  "description": "Medium-quality US English female voice. Clear and versatile.",
+  "model": "en_US-amy-medium",
+  "active": true,
+  "params": {
+    "length_scale": 1.0,
+    "noise_scale": 0.667,
+    "noise_w_scale": 0.8
+  },
+  "segment_silence": 0.0,
+  "crossfade": 0.03,
+  "global_effects": [],
+  "modes": {
+    "normal":    { "effects": ["normal"] },
+    "whisper":   { "effects": ["whisper"] },
+    "breathy":   { "effects": ["breathy"] },
+    "emphatic":  { "effects": ["emphatic"] },
+    "radio":     { "effects": ["radio"] },
+    "processed": { "effects": ["processed"] },
+    "robotic":   { "effects": ["processed", "radio"] },
+    "menacing":  { "effects": ["emphatic", "processed"] },
+    "warm":      { "effects": ["breathy", "normal"] },
+    "dramatic":  { "effects": ["emphatic", "processed"] },
+    "intimate":  { "effects": ["whisper", "breathy"] }
+  }
+}

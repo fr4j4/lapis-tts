@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TTS Segment DB Analyzer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .waveform-preview {
+            height: 40px;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+        .bar {
+            background-color: #3b82f6;
+            width: 4px;
+            border-radius: 2px;
+            transition: height 0.2s ease;
+        }
+        .tag-badge-normal { background-color: #e2e8f0; color: #475569; }
+        .tag-badge-tagged { background-color: #dbeafe; color: #1e40af; }
+        
+        .tab-active {
+            border-bottom: 2px solid #2563eb;
+            color: #2563eb;
+            font-weight: 600;
+        }
+
+        /* Remove arrows from number input */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        /* High-visibility focus state for professional data entry */
+        input[type=number]:focus {
+            outline: 2px solid #2563eb;
+            outline-offset: 2px;
+            background-color: #eff6ff;
+        }
+        
+        textarea:focus {
+            outline: 2px solid #94a3b8;
+            outline-offset: 2px;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen p-4 md:p-8 font-sans">
+
+    <div class="max-w-4xl mx-auto">
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-slate-800 tracking-tight">TTS Power Analyzer</h1>
+            <p class="text-slate-500">Optimized segmented gain control for high-speed synthesis workflows.</p>
+        </header>
+
+        <!-- Script Input -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+            <label class="block text-sm font-semibold text-slate-700 mb-2 italic text-sm">Script Input</label>
+            <textarea id="textInput" class="w-full h-32 p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none mb-4 font-mono text-sm" placeholder="Enter text with or without XML tags..."></textarea>
+            <button onclick="processText()" class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-lg font-medium transition-all shadow-md active:scale-95">
+                Process Timeline
+            </button>
+        </div>
+
+        <!-- Tab System -->
+        <div id="mainInterface" class="hidden">
+            <div class="flex border-b border-slate-200 mb-6 gap-8">
+                <button id="tabEditBtn" onclick="switchTab('edit')" class="pb-3 px-1 text-slate-500 hover:text-blue-600 transition-colors tab-active">
+                    Gain & Notes
+                </button>
+                <button id="tabOutputBtn" onclick="switchTab('output')" class="pb-3 px-1 text-slate-500 hover:text-blue-600 transition-colors">
+                    JSON Export
+                </button>
+            </div>
+
+            <!-- Tab: Analysis/Editing -->
+            <div id="tabEdit" class="space-y-4">
+                <div id="segmentsContainer" class="space-y-4"></div>
+            </div>
+
+            <!-- Tab: Output -->
+            <div id="tabOutput" class="hidden">
+                <div class="bg-slate-900 rounded-xl p-6 shadow-xl border border-slate-800">
+                    <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-4">
+                        <div>
+                            <h2 class="text-white font-bold">Sequence Schema</h2>
+                            <p class="text-slate-500 text-xs">Full metadata export for production engines.</p>
+                        </div>
+                        <button onclick="copyJson(this)" class="bg-blue-600/20 text-blue-400 border border-blue-600/30 hover:bg-blue-600/30 px-4 py-1.5 rounded-lg text-xs font-bold transition-all">
+                            Copy to Clipboard
+                        </button>
+                    </div>
+                    <pre id="jsonOutput" class="text-xs overflow-x-auto text-blue-300 leading-relaxed max-h-[500px] font-mono"></pre>
+                </div>
+            </div>
+        </div>
+
+        <div id="emptyState" class="py-20 text-center border-2 border-dashed border-slate-200 rounded-xl">
+            <p class="text-slate-400 italic">No data to display. Process text to enable analysis tabs.</p>
+        </div>
+    </div>
+
+    <script>
+        let segments = [];
+
+        function switchTab(tab) {
+            const editTab = document.getElementById('tabEdit');
+            const outputTab = document.getElementById('tabOutput');
+            const editBtn = document.getElementById('tabEditBtn');
+            const outputBtn = document.getElementById('tabOutputBtn');
+
+            if (tab === 'edit') {
+                editTab.classList.remove('hidden');
+                outputTab.classList.add('hidden');
+                editBtn.classList.add('tab-active');
+                outputBtn.classList.remove('tab-active');
+            } else {
+                editTab.classList.add('hidden');
+                outputTab.classList.remove('hidden');
+                editBtn.classList.remove('tab-active');
+                outputBtn.classList.add('tab-active');
+                updateJson(); 
+            }
+        }
+
+        function processText() {
+            const text = document.getElementById('textInput').value;
+            const container = document.getElementById('segmentsContainer');
+            const interface = document.getElementById('mainInterface');
+            const empty = document.getElementById('emptyState');
+            
+            const regex = /<(\w+)>([\s\S]*?)<\/\1>|([^<]+)/g;
+            
+            let match;
+            segments = [];
+            container.innerHTML = '';
+            let count = 0;
+
+            while ((match = regex.exec(text)) !== null) {
+                let tag, content;
+
+                if (match[1]) {
+                    tag = match[1];
+                    content = match[2].trim();
+                } else if (match[3]) {
+                    tag = 'normal';
+                    content = match[3].trim();
+                }
+
+                if (!content) continue;
+
+                const id = count++;
+                const defaultDb = 0.0;
+
+                segments.push({ id, tag, content, db: defaultDb, note: "" });
+            }
+
+            if (segments.length > 0) {
+                // Render segments with a specific tab order strategy:
+                // 1. All numeric inputs (1 to N)
+                // 2. All textareas (N+1 to 2N)
+                segments.forEach((s, index) => {
+                    renderSegment(s.id, s.tag, s.content, s.db, s.tag !== 'normal', segments.length);
+                });
+
+                interface.classList.remove('hidden');
+                empty.classList.add('hidden');
+                updateJson();
+                switchTab('edit'); 
+            } else {
+                interface.classList.add('hidden');
+                empty.classList.remove('hidden');
+            }
+        }
+
+        function renderSegment(id, tag, content, db, isTagged, totalSegments) {
+            const container = document.getElementById('segmentsContainer');
+            const card = document.createElement('div');
+            const badgeClass = isTagged ? 'tag-badge-tagged' : 'tag-badge-normal';
+            
+            // Tabindex strategy: 
+            // Gain inputs: 1, 2, 3...
+            // Note textareas: Total+1, Total+2...
+            const gainTabIndex = id + 1;
+            const noteTabIndex = totalSegments + id + 1;
+
+            card.className = "bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:border-blue-300 transition-all group";
+            card.innerHTML = `
+                <div class="flex flex-col gap-4">
+                    <div class="flex flex-col md:flex-row md:items-start justify-between gap-6">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-3">
+                                <span class="px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-widest ${badgeClass}">
+                                    ${tag}
+                                </span>
+                                <span class="text-slate-300 text-[10px] font-mono">ID_${id}</span>
+                            </div>
+                            <p class="text-slate-700 text-sm leading-relaxed font-medium mb-3">"${content}"</p>
+                            
+                            <!-- Comment Field -->
+                            <div class="mt-2">
+                                <textarea 
+                                    tabindex="${noteTabIndex}"
+                                    class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs text-slate-600 focus:bg-white focus:ring-1 focus:ring-slate-400 focus:border-transparent transition-all resize-none"
+                                    placeholder="Add production notes..."
+                                    oninput="updateNote(${id}, this.value)"
+                                    rows="1"></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="flex flex-col items-center gap-3 w-full md:w-64 bg-slate-50 p-4 rounded-xl border border-slate-100 group-hover:bg-blue-50/30 transition-colors">
+                            <div class="flex justify-between items-center w-full text-[10px] font-black text-slate-400 uppercase">
+                                <span>Amplitude</span>
+                                <div class="flex items-center bg-white border border-slate-200 rounded px-2 py-1 shadow-inner ring-offset-2 focus-within:ring-2 focus-within:ring-blue-500">
+                                    <input type="number" 
+                                        id="num-input-${id}"
+                                        tabindex="${gainTabIndex}"
+                                        step="0.1" 
+                                        min="-40" 
+                                        max="15" 
+                                        value="${db.toFixed(1)}"
+                                        class="w-12 text-blue-600 font-mono text-xs focus:outline-none text-right bg-transparent"
+                                        oninput="updateDb(${id}, this.value, 'num')">
+                                    <span class="ml-1 text-slate-400 font-normal">dB</span>
+                                </div>
+                            </div>
+                            <input type="range" 
+                                id="range-input-${id}"
+                                tabindex="-1"
+                                min="-40" 
+                                max="15" 
+                                step="0.1" 
+                                value="${db}" 
+                                class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600 focus:outline-none"
+                                oninput="updateDb(${id}, this.value, 'range')">
+                            
+                            <div class="waveform-preview" id="wave-${id}">
+                                ${Array(16).fill(0).map(() => `<div class="bar" style="height: ${calculateHeight(db)}%"></div>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        }
+
+        function calculateHeight(db) {
+            const min = -40, max = 15;
+            return Math.max(10, ((db - min) / (max - min)) * 100);
+        }
+
+        function updateNote(id, val) {
+            segments[id].note = val;
+            updateJson();
+        }
+
+        function updateDb(id, val, source) {
+            let db = parseFloat(val);
+            
+            if (isNaN(db)) db = 0;
+            if (db < -40) db = -40;
+            if (db > 15) db = 15;
+
+            segments[id].db = parseFloat(db.toFixed(1));
+            
+            if (source === 'num') {
+                document.getElementById(`range-input-${id}`).value = db;
+            } else {
+                document.getElementById(`num-input-${id}`).value = db.toFixed(1);
+            }
+            
+            const bars = document.querySelectorAll(`#wave-${id} .bar`);
+            const baseHeight = calculateHeight(db);
+            bars.forEach(bar => {
+                const jitter = Math.random() * 20; 
+                bar.style.height = `${Math.min(100, baseHeight + jitter)}%`;
+            });
+            
+            updateJson();
+        }
+
+        function updateJson() {
+            const output = document.getElementById('jsonOutput');
+            output.textContent = JSON.stringify({
+                metadata: {
+                    source: "TTS Segment Analyzer",
+                    version: "2.4.0",
+                    resolution: "0.1dB",
+                    initial_state: "neutral_0db",
+                    focus_strategy: "sequential_gain_first"
+                },
+                sequence: segments.map(s => ({
+                    mode: s.tag,
+                    gain_db: s.db,
+                    notes: s.note || null,
+                    text: s.content
+                }))
+            }, null, 4);
+        }
+
+        function copyJson(btn) {
+            const text = document.getElementById('jsonOutput').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                const original = btn.innerText;
+                btn.innerText = "COPIED";
+                btn.classList.replace('text-blue-400', 'text-green-400');
+                setTimeout(() => {
+                    btn.innerText = original;
+                    btn.classList.replace('text-green-400', 'text-blue-400');
+                }, 1500);
+            });
+        }
+    </script>
+</body>
+</html>

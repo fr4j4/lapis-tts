@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LAPIS TTS Playground</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-dark: #0d1117;
+      --bg-card: #161b22;
+      --bg-input: #21262d;
+      --border: #30363d;
+      --accent: #58a6ff;
+      --accent-dim: #1f6feb;
+      --text: #c9d1d9;
+      --text-muted: #8b949e;
+      --success: #238636;
+      --error: #da3633;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 16px;
+      line-height: 1.5;
+    }
+
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    header h1 { color: var(--accent); font-size: 1.5rem; font-weight: 600; }
+    header .links a { color: var(--text-muted); text-decoration: none; margin-left: 16px; font-size: 14px; }
+    header .links a:hover { color: var(--accent); }
+
+    /* Main Layout - 3 columns */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 200px 1fr 350px;
+      gap: 16px;
+      align-items: start;
+      height: calc(100vh - 140px);
+    }
+    @media (max-width: 1200px) {
+      .main-grid { grid-template-columns: 1fr 1fr; height: auto; }
+      .main-grid > div:last-child { grid-column: span 2; }
+    }
+    @media (max-width: 800px) {
+      .main-grid { grid-template-columns: 1fr; }
+      .main-grid > div:last-child { grid-column: span 1; }
+    }
+
+    /* Right Column - Segment + History */
+    .right-column {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      height: 100%;
+      min-height: 400px;
+    }
+    .right-column .section {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .right-column .section:first-child {
+      flex: 2;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .right-column .section:last-child {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .segment-preview {
+      flex: 1;
+      padding: 10px;
+      background: var(--bg-input);
+      border-radius: 6px;
+      overflow-y: auto;
+    }
+    .history-list {
+      flex: 1;
+      overflow-y: auto;
+    }
+    .segment-bars { display: flex; flex-direction: column; gap: 8px; }
+    .segment-bar {
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #fff;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .segment-bar .mode-label {
+      background: rgba(0,0,0,0.3);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+    .segment-bar .mode-text { flex: 1; word-break: break-word; }
+
+    /* Section */
+    .section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      flex-shrink: 0;
+    }
+    .section-title {
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      flex-shrink: 0;
+    }
+
+    /* Sidebar - Left */
+    .sidebar { display: flex; flex-direction: column; gap: 16px; }
+
+    .voice-list { display: flex; flex-direction: column; gap: 6px; }
+    .voice-chip {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 12px;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--text-muted);
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .voice-chip:hover { border-color: var(--accent); color: var(--text); }
+    .voice-chip.active {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+      color: #fff;
+    }
+    .voice-chip .flag { font-size: 16px; }
+
+    .lang-filter { display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; }
+    .lang-filter-btn {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 12px;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all 0.15s;
+    }
+    .lang-filter-btn:hover { border-color: var(--accent); }
+    .lang-filter-btn.active {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .voice-chip .quality {
+      font-size: 10px;
+      padding: 1px 4px;
+      border-radius: 3px;
+      margin-left: auto;
+      background: #333;
+      color: #888;
+    }
+    .voice-chip .quality.high { background: #1a472a; color: #4ade80; }
+    .voice-chip .quality.medium { background: #3d2f1e; color: #fbbf24; }
+    .voice-chip .quality.low { background: #3a1a1a; color: #f87171; }
+    .voice-chip.inactive { opacity: 0.4; pointer-events: none; }
+    .voice-chip.inactive::after {
+      content: "⚠️";
+      font-size: 10px;
+      margin-left: 4px;
+    }
+
+    /* Center Column */
+    .center-column {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 0;
+    }
+
+    /* Text Input Section */
+    .text-section { display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0; }
+
+    .example-select {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 14px;
+    }
+    .example-select:focus { outline: none; border-color: var(--accent); }
+
+    textarea {
+      width: 100%;
+      flex: 1;
+      min-height: 150px;
+      padding: 12px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: monospace;
+      resize: none;
+    }
+    textarea:focus { outline: none; border-color: var(--accent); }
+
+    /* Mode tags integrated with text */
+    .mode-tags-inline {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      padding: 8px;
+      background: var(--bg-input);
+      border-radius: 6px;
+      margin-bottom: 12px;
+    }
+    .mode-tag {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-size: 12px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .mode-tag:hover { border-color: var(--accent); color: var(--text); }
+
+    /* Output Section */
+    .output-section { display: flex; flex-direction: column; gap: 12px; }
+
+    /* Sliders in output */
+    .slider-row { margin-bottom: 14px; }
+    .slider-row:last-child { margin-bottom: 0; }
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .slider-label { font-size: 13px; color: var(--text-muted); }
+    .slider-value { font-size: 13px; color: var(--accent); font-weight: 500; }
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      -webkit-appearance: none;
+      background: var(--bg-input);
+      border-radius: 3px;
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      background: var(--accent);
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    .slider-desc { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+    .btn-reset {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 8px;
+    }
+    .btn-reset:hover { border-color: var(--accent); color: var(--text); }
+
+    /* Status */
+    .status { margin-top: 8px; font-size: 13px; min-height: 20px; }
+    .status.loading { color: var(--text-muted); }
+    .status.success { color: var(--success); }
+    .status.error { color: var(--error); }
+
+    /* Generate */
+    .generate-section {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .btn-generate {
+      background: var(--success);
+      border: none;
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-generate:hover { filter: brightness(1.1); }
+    .btn-generate:disabled { background: var(--border); cursor: not-allowed; }
+    .toggle-autoplay {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    .toggle-autoplay input { accent-color: var(--accent); }
+
+    /* Audio Player */
+    .audio-player { margin-top: 12px; padding: 12px; background: var(--bg-input); border-radius: 6px; min-height: 70px; display: none; }
+    .audio-player .spinner {
+      display: none;
+      width: 24px;
+      height: 24px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 20px auto;
+    }
+    .audio-player.loading { display: block; }
+    .audio-player.loading .spinner { display: block; }
+    .audio-player.loading .audio-content { display: none; }
+    .audio-player.has-audio { display: block; }
+    .audio-player.has-audio .spinner { display: none; }
+    .audio-player.has-audio .audio-content { display: block; }
+    .audio-player audio { width: 100%; height: 36px; }
+    .audio-player .download-link {
+      display: inline-block;
+      margin-top: 8px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .audio-player .download-link:hover { text-decoration: underline; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* History Items */
+    .history-item {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+    .history-item:last-child { margin-bottom: 0; }
+    .history-text {
+      font-size: 12px;
+      color: var(--text);
+      max-height: 48px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      margin-bottom: 8px;
+      word-break: break-word;
+    }
+    .history-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .history-voice { font-weight: 500; }
+    .history-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .btn-copy {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .btn-copy:hover { border-color: var(--accent); color: var(--text); }
+    .btn-copy.copied { color: var(--success); border-color: var(--success); }
+    .history-item audio {
+      width: 100%;
+      height: 32px;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>LAPIS TTS Playground</h1>
+      <div class="links">
+        <a href="/health">Health</a>
+        <a href="/docs">Docs</a>
+        <a href="/v1/voices">Voices</a>
+      </div>
+    </header>
+
+    <div class="main-grid">
+      <!-- Sidebar: Only Voices -->
+      <div class="sidebar">
+        <div class="section">
+          <div class="section-title">Voice</div>
+          <div class="lang-filter" id="langFilter"></div>
+          <div class="voice-list" id="voiceList">
+            <span style="color: var(--text-muted); font-size: 13px;">Loading...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Center: Text Input + Output/Parameters -->
+      <div class="center-column">
+        <div class="section text-section">
+          <div class="section-title">Text Input</div>
+          <select id="examplePhrases" class="example-select">
+            <option value="">Example phrases...</option>
+          </select>
+          
+          <div class="mode-tags-inline">
+            <span style="font-size: 11px; color: var(--text-muted); margin-right: 8px; text-transform: uppercase;">Talk Modes:</span>
+            <span class="mode-tag" data-mode="normal">normal</span>
+            <span class="mode-tag" data-mode="whisper">whisper</span>
+            <span class="mode-tag" data-mode="breathy">breathy</span>
+            <span class="mode-tag" data-mode="emphatic">emphatic</span>
+            <span class="mode-tag" data-mode="radio">radio</span>
+            <span class="mode-tag" data-mode="processed">processed</span>
+            <span class="mode-tag" data-mode="robotic">robotic</span>
+            <span class="mode-tag" data-mode="menacing">menacing</span>
+            <span class="mode-tag" data-mode="warm">warm</span>
+            <span class="mode-tag" data-mode="dramatic">dramatic</span>
+            <span class="mode-tag" data-mode="intimate">intimate</span>
+          </div>
+          
+          <textarea id="text" placeholder="Write text here... Click mode tags above to insert."></textarea>
+        </div>
+
+        <div class="section output-section">
+          <div class="section-title">Output</div>
+          
+          <!-- Parameters FIRST -->
+          <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border);">
+            <div class="section-title" style="margin-bottom: 12px;">Parameters</div>
+            <div class="slider-row">
+              <div class="slider-header">
+                <span class="slider-label">Speed</span>
+                <span class="slider-value" id="speedValue">1.0x</span>
+              </div>
+              <input type="range" id="speedScale" min="0.5" max="2.0" step="0.1" value="1.0">
+              <div class="slider-desc">Higher = faster speech</div>
+            </div>
+            <div class="slider-row">
+              <div class="slider-header">
+                <span class="slider-label">Variation</span>
+                <span class="slider-value" id="noiseValue">0.667</span>
+              </div>
+              <input type="range" id="noiseScale" min="0.3" max="1.0" step="0.05" value="0.667">
+              <div class="slider-desc">Higher = more expressive</div>
+            </div>
+            <div class="slider-row">
+              <div class="slider-header">
+                <span class="slider-label">Phoneme</span>
+                <span class="slider-value" id="noiseWValue">0.8</span>
+              </div>
+              <input type="range" id="noiseWScale" min="0.3" max="1.0" step="0.05" value="0.8">
+              <div class="slider-desc">Lower = more precise</div>
+            </div>
+            <div class="slider-row">
+              <div class="slider-header">
+                <span class="slider-label">Format</span>
+              </div>
+              <select id="outputFormat" style="width:100%;padding:8px 10px;background:var(--bg-input);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:13px;">
+                <option value="mp3" selected>MP3</option>
+                <option value="ogg">OGG</option>
+                <option value="wav">WAV</option>
+              </select>
+              <div class="slider-desc">Output audio format</div>
+            </div>
+            <button class="btn-reset" id="resetParamsBtn">Reset to Defaults</button>
+          </div>
+          
+          <!-- Generate button -->
+          <div class="generate-section">
+            <button class="btn-generate" id="generateBtn">Generate Audio</button>
+            <label class="toggle-autoplay">
+              <input type="checkbox" id="autoplay" checked>
+              Autoplay
+            </label>
+          </div>
+
+          <div class="status" id="status"></div>
+          <div class="audio-player" id="audioPlayer">
+            <div class="spinner"></div>
+            <div class="audio-content" style="display: none;">
+              <audio controls></audio>
+              <a class="download-link" href="#">Download</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Segment Preview + History (stacked) -->
+      <div class="right-column">
+        <div class="section" style="flex: 1;">
+          <div class="section-title">Segment Preview</div>
+          <div class="segment-preview">
+            <div class="segment-bars" id="segmentBars">
+              <span style="color: var(--text-muted); font-size: 12px;">Segments will appear here...</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section" style="flex: 1;">
+          <div class="section-title">Audio History</div>
+          <div class="history-list" id="historyList">
+            <div class="history-empty" id="historyEmpty">No audio generated in this session</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-footer">
+      <code>POST /v1/text-to-speech/{voice_id}</code> · 
+      <code>GET /health</code> · 
+      <code>GET /v1/voices</code>
+    </div>
+  </div>
+
+  <script>
+    const MODE_COLORS = {
+      normal: '#4a90d9', whisper: '#9b59b6', breathy: '#1abc9c',
+      emphatic: '#e74c3c', radio: '#f39c12', processed: '#95a5a6',
+      robotic: '#58a6ff', menacing: '#c0392b', warm: '#e67e22',
+      dramatic: '#8e44ad', intimate: '#d4a5a5'
+    };
+
+    let selectedVoice = null;
+    let voicesList = [];
+    let audioHistory = [];
+    let currentLangFilter = 'all';
+
+    const LANG_LABELS = {
+      'all': 'All', '🇺🇸': 'English', '🇲🇽': 'Mexican', '🇪🇸': 'Spanish'
+    };
+
+    function getVoiceLang(voice) {
+      const model = voice.model || '';
+      if (model.startsWith('es_MX') || model.startsWith('es_AR')) return '🇲🇽';
+      if (model.startsWith('es_')) return '🇪🇸';
+      if (model.startsWith('en_')) return '🇺🇸';
+      return '🎙️';
+    }
+
+    function getAvailableLangs() {
+      const langs = new Set(voicesList.map(v => getVoiceLang(v)).filter(l => l !== '🎙️'));
+      return ['all', ...Array.from(langs)];
+    }
+
+    function renderLangFilter() {
+      const container = document.getElementById('langFilter');
+      const langs = getAvailableLangs();
+      container.innerHTML = '';
+      langs.forEach(lang => {
+        const btn = document.createElement('button');
+        btn.className = 'lang-filter-btn' + (lang === currentLangFilter ? ' active' : '');
+        btn.textContent = LANG_LABELS[lang] || lang;
+        btn.onclick = () => { currentLangFilter = lang; renderLangFilter(); renderVoiceList(); };
+        container.appendChild(btn);
+      });
+    }
+
+    // Load voices from API
+    async function loadVoices() {
+      try {
+        const res = await fetch('/v1/voices');
+        const data = await res.json();
+        voicesList = data.voices || data;
+        renderLangFilter();
+        renderVoiceList();
+        if (voicesList.length > 0) selectVoice(voicesList[0].voice_id);
+      } catch (e) {
+        console.error('Failed to load voices:', e);
+        document.getElementById('voiceList').innerHTML = '<span style="color: #f85149;">Failed to load</span>';
+      }
+    }
+
+    function getModelQuality(model) {
+      if (!model) return '';
+      if (model.includes('-high') || model.endsWith('high')) return 'high';
+      if (model.includes('-medium') || model.endsWith('medium')) return 'medium';
+      if (model.includes('-low') || model.endsWith('low')) return 'low';
+      return '';
+    }
+
+    function renderVoiceList() {
+      const container = document.getElementById('voiceList');
+      container.innerHTML = '';
+      
+      const filtered = currentLangFilter === 'all' 
+        ? voicesList 
+        : voicesList.filter(v => getVoiceLang(v) === currentLangFilter);
+      
+      if (filtered.length === 0) {
+        container.innerHTML = '<span style="color: var(--text-muted); font-size: 13px;">No voices for this language</span>';
+        return;
+      }
+
+      filtered.forEach((voice, index) => {
+        const chip = document.createElement('div');
+        const isActive = voice.active !== false;
+        chip.className = 'voice-chip' + (index === 0 ? ' active' : '') + (!isActive ? ' inactive' : '');
+        chip.dataset.voice = voice.voice_id;
+        
+        const lang = getVoiceLang(voice);
+        const quality = getModelQuality(voice.model);
+        const qualityBadge = quality ? `<span class="quality ${quality}">${quality}</span>` : '';
+        
+        chip.innerHTML = `<span class="flag">${lang}</span>${voice.name}${qualityBadge}`;
+        if (isActive) {
+          chip.addEventListener('click', () => selectVoice(voice.voice_id));
+        }
+        container.appendChild(chip);
+      });
+    }
+
+    function selectVoice(voiceId) {
+      selectedVoice = voiceId;
+      const allFiltered = currentLangFilter === 'all' 
+        ? voicesList 
+        : voicesList.filter(v => getVoiceLang(v) === currentLangFilter);
+      
+      const filtered = allFiltered.filter(v => v.active !== false);
+      const visible = filtered.map(v => v.voice_id);
+      if (!visible.includes(voiceId) && filtered.length > 0) {
+        voiceId = filtered[0].voice_id;
+        selectedVoice = voiceId;
+      }
+      
+      document.querySelectorAll('.voice-chip').forEach(c => {
+        c.classList.toggle('active', c.dataset.voice === voiceId);
+      });
+    }
+
+    function insertTag(mode) {
+      const ta = document.getElementById('text');
+      const start = ta.selectionStart;
+      const end = ta.selectionEnd;
+      const text = ta.value;
+      const selected = text.substring(start, end) || 'text';
+      ta.value = `${text.substring(0, start)}<${mode}>${selected}</${mode}>${text.substring(end)}`;
+      ta.focus();
+      ta.selectionStart = start + mode.length + 2;
+      ta.selectionEnd = start + mode.length + 2 + selected.length;
+      updateSegmentPreview();
+    }
+
+    // Mode tags click
+    document.querySelectorAll('.mode-tag').forEach(tag => {
+      tag.addEventListener('click', () => insertTag(tag.dataset.mode));
+    });
+
+    function parseSegments(text) {
+      const pattern = /<(\w+)>(.*?)<\/\1>/g;
+      const segments = [];
+      let lastEnd = 0;
+      let match;
+      while ((match = pattern.exec(text)) !== null) {
+        if (match.index > lastEnd) {
+          const before = text.substring(lastEnd, match.index);
+          if (before.trim()) segments.push({ text: before, mode: 'normal' });
+        }
+        segments.push({ text: match[2], mode: match[1].toLowerCase() });
+        lastEnd = match.index + match[0].length;
+      }
+      if (lastEnd < text.length) {
+        const after = text.substring(lastEnd);
+        if (after.trim()) segments.push({ text: after, mode: 'normal' });
+      }
+      return segments.length > 0 ? segments : [{ text: text.replace(/<\w+>.*?<\/\w+>/g, ''), mode: 'normal' }];
+    }
+
+    function updateSegmentPreview() {
+      const text = document.getElementById('text').value;
+      const container = document.getElementById('segmentBars');
+      const segments = parseSegments(text);
+
+      if (segments.length === 0 || (segments.length === 1 && !segments[0].text.trim())) {
+        container.innerHTML = '<span style="color: var(--text-muted); font-size: 12px;">Segments will appear here...</span>';
+        return;
+      }
+
+      container.innerHTML = segments.map(s => {
+        const color = MODE_COLORS[s.mode] || MODE_COLORS.normal;
+        return `<div class="segment-bar" style="background: ${color}">
+          <span class="mode-label">${s.mode}</span>
+          <span class="mode-text">${escapeHtml(s.text)}</span>
+        </div>`;
+      }).join('');
+    }
+
+    // Example phrases
+    const exampleData = [
+      { text: "<robotic>ATENCIÓN</robotic>, <processed>esta es una transmisión de emergencia</processed> desde el laboratorio central de investigación científica. <whisper>Se ha detectado una anomalía crítica</whisper> en los sistemas principales que requiere su atención inmediata. <emphatic>Por favor, mantenga la calma</emphatic> y permanezcan en sus posiciones actuales mientras <radio>el personal especializado</radio> se hace cargo de la situación. <normal>Este mensaje se repetirá</normal> cada cinco minutos hasta nuevo aviso. <warm>Gracias por su cooperación</warm> y <menacing>recuerden que su seguridad es nuestra prioridad número uno</menacing>.", label: "🇪🇸 Alerta de emergencia" },
+      { text: "Era una noche <warm>especialmente tranquila en el pequeño pueblo costero</warm>, el tipo de noche donde el sonido del mar parecía una melodía de fondo mientras las luces de las casas parpadeaban una por una en la oscuridad, creando sombras danzantes en las calles empedradas. Cuando <dramatic>de repente una luz brillante atravesó el cielo nocturno</dramatic>, sobresaltando a todos los habitantes que dormían plácidamente en sus casas cerca de la playa. Los delfines comenzaron a nadar frenéticamente cerca de la orilla como si <intimate>quisieran alertar a todos sobre algo que se avecinaba</intimate>, y el <menacing>miedo se extendió como fuego</menacing> por cada rincón del pueblo esa noche.", label: "🇪🇸 Historia de misterio" },
+      { text: "La inteligencia artificial <normal>está transformando rápidamente</normal> cada aspecto de nuestra vida cotidiana de maneras que <whisper>nunca hubiéramos imaginado posible</whisper> hace apenas unos años. Desde los asistentes virtuales que <emphatic>responden a nuestras preguntas</emphatic> en tiempo real hasta los sistemas de navegación autónoma que <dramatic>revolucionan la industria del transporte</dramatic>, la IA está aquí para quedarse. Sin embargo, <intimate>con gran poder viene gran responsabilidad</intimate>, y debemos <menacing>considerar cuidadosamente</menacing> las implicaciones éticas de cada decisión que tomamos en el desarrollo de estas tecnologías que <processed>definirán el futuro de la humanidad</processed> para siempre.", label: "🇪🇸 IA y ética" },
+      { text: "<breathy>¿Alguna vez te has preguntado</breathy> qué significa realmente la <normal>conexión entre dos personas</normal> que comparten un momento especial juntos? <whisper>Es ese sentimiento invisible</whisper> que <emphatic>nos hace vibrar</emphatic> desde lo más profundo del alma cuando <intimate>miramos a los ojos</intimate> a alguien que <warm>entiende nuestra esencia</warm> sin necesidad de palabras. En esos momentos <radio>el tiempo parece detenerse</radio> y <dramatic>el universo entero</dramatic> se convierte en el escenario perfecto para <menacing>una historia que solo nosotros dos</menacing> podemos escribir juntos, <processed>página por página</processed>, <robotic>bit por bit</robotic>.", label: "🇪🇸 Poesía emotiva" },
+      { text: "<normal>Bienvenido al laboratorio de experimentación</normal> donde <robotic>las leyes de la física</robotic> parecen doblarse bajo nuestra voluntad. <processed>Aquí, en este espacio</processed> donde la ciencia y la magia se encuentran, <whisper>cada experimento</whisper> es un paso hacia lo desconocido. <emphatic>Los resultados</emphatic> a veces <dramatic>superan nuestras expectativas</dramatic>, otras veces <menacing>revelan verdades</menacing> que preferiríamos no conocer. <warm>Pero siempre</warm>, <intimate>sin excepción</intimate>, <radio>cada prueba</radio> nos <breathy>acerca más</breathy> a <processed>la comprensión definitiva</processed> del <robotic>universo mismo</robotic>.", label: "🇪🇸 Laboratorio científico" },
+      { text: "En el corazón del <dramatic>céano profundo</dramatic>, los delfines <warm>nadan libremente</warm> comunicándose en códigos secretos que <whisper>nadie puede escuchar</whisper> excepto <emphatic>quienes saben</emphatic> escuchar con el corazón y no solo con los oídos. <normal>Estos seres extraordinarios</normal> han desarrollado un lenguaje complejo que incluye <intimate>sonidos intimistas</intimate>, <radio>señales de radio</radio> y <processed>secuencias procesadas</processed> que revelan una inteligencia extraordinaria.", label: "🇪🇸 Delfines y comunicación" },
+      { text: "<robotic>ATTENTION</robotic>, <processed>this is an urgent system announcement</processed> from the central research facility. <whisper>A critical anomaly has been detected</whisper> in the primary systems that requires your immediate attention. <emphatic>Please remain calm</emphatic> and stay in your current positions while <radio>specialized personnel</radio> take control of the situation. <normal>This message will repeat</normal> every five minutes until further notice. <warm>Thank you for your cooperation</warm> and <menacing>remember that your safety is our number one priority</menacing>.", label: "🇬🇧 Emergency alert" },
+      { text: "It was a <warm>particularly quiet night in the small coastal town</warm>, the kind of night where the sound of the sea seemed like background music as the lights in the houses flickered one by one in the darkness, creating dancing shadows on the cobblestone streets. When <dramatic>suddenly a bright light pierced the night sky</dramatic>, startling all the inhabitants who were sleeping peacefully in their homes near the beach. The dolphins began swimming frantically near the shore as if <intimate>they wanted to warn everyone about something coming</intimate>, and <menacing>fea spread like fire</menacing> through every corner of town that night.", label: "🇬🇧 Mystery story" },
+      { text: "Artificial intelligence <normal>is rapidly transforming</normal> every aspect of our daily lives in ways that <whisper>we never thought possible</whisper> just a few short years ago. From virtual assistants that <emphatic>answer our questions</emphatic> in real time to autonomous navigation systems that <dramatic>revolutionize the transportation industry</dramatic>, AI is here to stay. However, <intimate>with great power comes great responsibility</intimate>, and we must <menacing>carefully consider</menacing> the ethical implications of every decision we make in developing these technologies that <processed>will define humanity's future</processed> forever.", label: "🇬🇧 AI and ethics" },
+      { text: "<breathy>Have you ever wondered</breathy> what it really means to <normal>connect with another person</normal> during a special moment together? <whisper>It's that invisible feeling</whisper> that <emphatic>makes us vibrate</emphatic> from the depths of our souls when we <intimate>look into the eyes</intimate> of someone who <warm>understands our essence</warm> without needing words. In those moments <radio>time seems to stand still</radio> and <dramatic>the entire universe</dramatic> becomes the perfect stage for <menacing>a story that only the two of us</menacing> can write together, <processed>page by page</processed>, <robotic>bit by bit</robotic>.", label: "🇬🇧 Emotional poetry" },
+      { text: "<normal>Welcome to the experimentation laboratory</normal> where <robotic>the laws of physics</robotic> seem to bend under our will. <processed>Here, in this space</processed> where science and magic meet, <whisper>every experiment</whisper> is a step into the unknown. <emphatic>The results</emphatic> sometimes <dramatic>exceed our expectations</dramatic>, other times <menacing>reveal truths</menacing> we would rather not know. <warm>But always</warm>, <intimate>without exception</intimate>, <radio>every test</radio> brings us <breathy>closer to</breathy> the <processed>ultimate understanding</processed> of <robotic>the universe itself</robotic>.", label: "🇬🇧 Scientific lab" },
+      { text: "In the heart of the <dramatic>deep ocean</dramatic>, dolphins <warm>swim freely</warm> communicating in secret codes that <whisper>no one can hear</whisper> except <emphatic>those who know</emphatic> how to listen with their hearts and not just their ears. <normal>These extraordinary creatures</normal> have developed a complex language that includes <intimate>intimate sounds</intimate>, <radio>radio signals</radio> and <processed>processed sequences</processed> that reveal extraordinary intelligence.", label: "🇬🇧 Dolphin communication" }
+    ];
+
+    function loadExamples() {
+      const select = document.getElementById('examplePhrases');
+      exampleData.forEach(ex => {
+        const opt = document.createElement('option');
+        opt.value = ex.text;
+        opt.textContent = ex.label;
+        select.appendChild(opt);
+      });
+    }
+
+    document.getElementById('examplePhrases').addEventListener('change', function() {
+      if (this.value) {
+        document.getElementById('text').value = this.value;
+        this.selectedIndex = 0;
+        updateSegmentPreview();
+      }
+    });
+
+    // Sliders
+    const speedInput = document.getElementById('speedScale');
+    const speedDisplay = document.getElementById('speedValue');
+    speedInput.addEventListener('input', () => { speedDisplay.textContent = speedInput.value + 'x'; });
+
+    ['noiseScale', 'noiseWScale'].forEach(id => {
+      const el = document.getElementById(id);
+      const disp = document.getElementById(id.replace('Scale', 'Value'));
+      el.addEventListener('input', () => { disp.textContent = el.value; });
+    });
+
+    document.getElementById('resetParamsBtn').addEventListener('click', () => {
+      speedInput.value = 1.0;
+      speedDisplay.textContent = '1.0x';
+      document.getElementById('noiseScale').value = 0.667;
+      document.getElementById('noiseValue').textContent = '0.667';
+      document.getElementById('noiseWScale').value = 0.8;
+      document.getElementById('noiseWValue').textContent = '0.8';
+    });
+
+    document.getElementById('text').addEventListener('input', updateSegmentPreview);
+
+    // Generate
+    const btn = document.getElementById('generateBtn');
+    const textEl = document.getElementById('text');
+    const statusEl = document.getElementById('status');
+    // Audio player elements
+    const audioPlayer = document.getElementById('audioPlayer');
+    const audioContent = audioPlayer.querySelector('.audio-content');
+    const audioEl = audioPlayer.querySelector('audio');
+    const downloadLink = audioPlayer.querySelector('.download-link');
+    const autoplayCheckbox = document.getElementById('autoplay');
+    const historyList = document.getElementById('historyList');
+    const historyEmpty = document.getElementById('historyEmpty');
+
+    // Initially show audio player (hidden via CSS)
+    // audioContent.style.display = 'none';
+
+    btn.addEventListener('click', async () => {
+      const text = textEl.value.trim();
+      if (!text) { showStatus('Please enter some text', 'error'); return; }
+      if (!selectedVoice) { showStatus('Please select a voice', 'error'); return; }
+
+      // Show loading state
+      btn.disabled = true;
+      btn.textContent = 'Generating...';
+      audioPlayer.classList.remove('has-audio');
+      audioPlayer.classList.add('loading');
+      showStatus('Generating audio...', 'loading');
+
+      try {
+        const response = await fetch(`/v1/text-to-speech/${selectedVoice}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: text,
+            length_scale: 1 / parseFloat(speedInput.value),
+            noise_scale: parseFloat(document.getElementById('noiseScale').value),
+            noise_w_scale: parseFloat(document.getElementById('noiseWScale').value),
+            output_format: document.getElementById('outputFormat').value
+          })
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.detail || 'Unknown error');
+        }
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const format = document.getElementById('outputFormat').value;
+        audioEl.src = url;
+        audioPlayer.classList.remove('loading');
+        audioPlayer.classList.add('has-audio');
+        audioContent.style.display = 'block';
+
+        downloadLink.href = url;
+        downloadLink.download = `tts-${selectedVoice}-${Date.now()}.${format}`;
+
+        if (autoplayCheckbox.checked) {
+          audioEl.play();
+        }
+
+        addToHistory(text, url, selectedVoice);
+
+        showStatus('Audio generated successfully', 'success');
+      } catch (err) {
+        audioPlayer.classList.remove('loading');
+        // Show player even on error (with error message)
+        audioPlayer.classList.add('has-audio');
+        audioContent.style.display = 'block';
+        audioEl.parentElement.innerHTML = '<div style="color: var(--error); padding: 8px;">Error: ' + escapeHtml(err.message) + '</div>';
+        showStatus(err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Generate Audio';
+      }
+    });
+
+    function addToHistory(text, url, voiceId) {
+      const voice = voicesList.find(v => v.voice_id === voiceId);
+      const voiceName = voice?.name || voiceId;
+      const item = { text, url, voiceName, timestamp: new Date() };
+      audioHistory.unshift(item);
+      renderHistory();
+    }
+
+    function renderHistory() {
+      if (audioHistory.length === 0) {
+        historyEmpty.style.display = 'block';
+        historyList.querySelectorAll('.history-item').forEach(e => e.remove());
+        return;
+      }
+
+      historyEmpty.style.display = 'none';
+      historyList.querySelectorAll('.history-item').forEach(e => e.remove());
+
+      audioHistory.forEach((item) => {
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        const time = item.timestamp.toLocaleTimeString();
+        div.innerHTML = `
+          <div class="history-text" title="${escapeHtml(item.text)}">${escapeHtml(item.text)}</div>
+          <div class="history-meta">
+            <span class="history-voice">${item.voiceName}</span>
+            <span class="history-time">${time}</span>
+          </div>
+          <div class="history-actions">
+            <button class="btn-copy" data-text="${escapeHtml(item.text)}">Copy text</button>
+            <audio src="${item.url}" controls></audio>
+          </div>
+        `;
+        
+        const copyBtn = div.querySelector('.btn-copy');
+        copyBtn.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(item.text);
+            copyBtn.textContent = 'Copied!';
+            copyBtn.classList.add('copied');
+            setTimeout(() => {
+              copyBtn.textContent = 'Copy text';
+              copyBtn.classList.remove('copied');
+            }, 1500);
+          } catch (e) {
+            copyBtn.textContent = 'Failed';
+          }
+        });
+        
+        historyList.appendChild(div);
+      });
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function showStatus(msg, type) {
+      statusEl.textContent = msg;
+      statusEl.className = 'status ' + type;
+    }
+
+    // Initialize
+    loadVoices();
+    loadExamples();
+    updateSegmentPreview();
+  </script>
+</body>
+</html>

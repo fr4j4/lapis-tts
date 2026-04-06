@@ -1,0 +1,12 @@
+{
+  "name": "emphatic",
+  "description": "Énfasis y claridad para mensajes importantes",
+  "type": "ffmpeg",
+  "filters": [
+    "acompressor=threshold=-40dB:ratio=4:attack=50:release=50",
+    "bass=g=6:f=150",
+    "treble=g=5:f=3000",
+    "volume=+18dB",
+    "loudnorm=I=-16:TP=-1.5:LRA=11"
+  ]
+}

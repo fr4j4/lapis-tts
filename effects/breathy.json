@@ -1,0 +1,14 @@
+{
+  "name": "breathy",
+  "description": "Voz respirada con presencia íntima y calidez",
+  "type": "ffmpeg",
+  "filters": [
+    "highpass=f=250",
+    "lowpass=f=8500",
+    "bass=g=3:f=180",
+    "treble=g=2:f=3000",
+    "aecho=0.4:0.5:20:0.12",
+    "acompressor=threshold=-35dB:ratio=3:attack=10:release=40",
+    "loudnorm=I=-16:TP=-1.5:LRA=11"
+  ]
+}

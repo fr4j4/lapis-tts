@@ -1,0 +1,19 @@
+{
+  "name": "master_bus",
+  "description": "Efectos globales aplicados a TODO el audio generado (master bus)",
+  "enabled": true,
+  "start_end_silence": 0.1,
+  "crossfade": 0.05,
+  "filters": [
+    "acompressor=threshold=-24dB:ratio=4:attack=20:release=80",
+    "acompressor=threshold=-18dB:ratio=3:attack=30:release=100",
+    "alimiter=limit=-1.5dB:attack=5:release=50",
+    "volume=+6dB"
+  ],
+  "normalization": {
+    "target_lufs": -16.0,
+    "min_gain": -6.0,
+    "max_gain": 18.0,
+    "description": "Normalizacion dinamica por segmento basada en medicion RMS"
+  }
+}
