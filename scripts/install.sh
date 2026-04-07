@@ -96,15 +96,19 @@ download_voice() {
 
     echo "   Downloading ${model}"
 
-    local parts=(${model//-/ })
-    local lang="${parts[0]}"
-    local region="${parts[1]}"
-    local voice="${parts[2]}"
-    local quality="${parts[3]}"
+    # Parse model name correctly for HuggingFace structure
+    # Example: es_ES-mls_9972-low -> lang=es, region=es_ES, voice=mls_9972, quality=low
+    # Format: lang_REGION-voice_quality (e.g., es_ES-mls_9972-low)
+    local lang_code="${model%%_*}"          # es (before first _)
+    local rest="${model#*_}"                 # ES-mls_9972-low (after first _)
+    local region="${lang_code}_${rest%%-*}"  # es_ES (lang + before first -)
+    local voice_quality="${rest#*-}"         # mls_9972-low
+    local voice="${voice_quality%-*}"        # mls_9972 (before last -)
+    local quality="${voice_quality##*-}"     # low (after last -)
 
     local base_url="https://huggingface.co/rhasspy/piper-voices/resolve/main"
-    local onnx_url="${base_url}/${lang}/${region}/${voice}/${quality}/${model}.onnx"
-    local json_url="${base_url}/${lang}/${region}/${voice}/${quality}/${model}.onnx.json"
+    local onnx_url="${base_url}/${lang_code}/${region}/${voice}/${quality}/${model}.onnx"
+    local json_url="${base_url}/${lang_code}/${region}/${voice}/${quality}/${model}.onnx.json"
 
     mkdir -p "$output_dir"
 
@@ -131,10 +135,10 @@ if [ "$VOICE_COUNT" -eq 0 ] || [ "$DOWNLOAD_VOICES" = true ]; then
 
     mkdir -p "$VOICES_DIR"
 
-    local failed=0
+    failed=0
     for config in "$PROJECT_DIR"/voice-configs/*.json; do
         [ -f "$config" ] || continue
-        local model=$(python3 -c "import json; print(json.load(open('$config'))['model'])" 2>/dev/null) || continue
+        model=$(python3 -c "import json; print(json.load(open('$config'))['model'])" 2>/dev/null) || continue
         download_voice "$model" "$VOICES_DIR" || failed=1
     done
 
