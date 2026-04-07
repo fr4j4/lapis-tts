@@ -64,7 +64,7 @@ async def list_voices():
         name=v["name"],
         description=v["description"],
         model=v["model"],
-        modes=list(v.get("modes", {}).keys()),
+        modes=v.get("modes", []),
     ) for v in voices_data]
     return VoiceList(voices=voices)
 

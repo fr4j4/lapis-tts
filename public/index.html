@@ -193,6 +193,34 @@
       font-size: 10px;
       margin-left: 4px;
     }
+    .voice-chip .modes-badge { font-size: 9px; padding: 1px 4px; border-radius: 3px; margin-left: 4px; background: #2d333b; color: #8b949e; }
+
+    /* Voice Detail Modal */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center;
+      z-index: 1000;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 24px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .modal-title { color: var(--accent); font-size: 18px; font-weight: 600; }
+    .modal-close { background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer; }
+    .modal-close:hover { color: var(--text); }
+    .modal-section { margin-bottom: 16px; }
+    .modal-section-title { color: var(--text-muted); font-size: 11px; font-weight: 600; text-transform: uppercase; margin-bottom: 8px; }
+    .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .modal-item { background: var(--bg-input); padding: 10px; border-radius: 6px; }
+    .modal-label { font-size: 11px; color: var(--text-muted); }
+    .modal-value { font-size: 13px; color: var(--text); margin-top: 4px; word-break: break-all; }
+    .modal-modes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .modal-mode-chip { background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; font-size: 11px; color: var(--text-muted); }
+    .modal-params-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .voice-detail-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; font-size: 12px; }
+    .voice-detail-btn:hover { color: var(--accent); }
 
     /* Center Column */
     .center-column {
@@ -417,7 +445,7 @@
   </style>
 </head>
 <body>
-  <div class="container">
+    <div class="container">
     <header>
       <h1>LAPIS TTS Playground</h1>
       <div class="links">
@@ -426,6 +454,54 @@
         <a href="/v1/voices">Voices</a>
       </div>
     </header>
+
+    <!-- Voice Detail Modal -->
+    <div class="modal-overlay" id="voiceModal">
+      <div class="modal">
+        <div class="modal-header">
+          <span class="modal-title" id="modalTitle">Voice Details</span>
+          <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-section">
+          <div class="modal-section-title">Basic Info</div>
+          <div class="modal-grid">
+            <div class="modal-item">
+              <div class="modal-label">Voice ID</div>
+              <div class="modal-value" id="modalVoiceId"></div>
+            </div>
+            <div class="modal-item">
+              <div class="modal-label">Model</div>
+              <div class="modal-value" id="modalModel"></div>
+            </div>
+          </div>
+          <div class="modal-item" style="margin-top: 12px;">
+            <div class="modal-label">Description</div>
+            <div class="modal-value" id="modalDescription"></div>
+          </div>
+        </div>
+        <div class="modal-section">
+          <div class="modal-section-title">Audio Settings</div>
+          <div class="modal-grid">
+            <div class="modal-item">
+              <div class="modal-label">Segment Silence</div>
+              <div class="modal-value" id="modalSegmentSilence"></div>
+            </div>
+            <div class="modal-item">
+              <div class="modal-label">Crossfade</div>
+              <div class="modal-value" id="modalCrossfade"></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-section">
+          <div class="modal-section-title">Available Modes</div>
+          <div class="modal-modes" id="modalModes"></div>
+        </div>
+        <div class="modal-section">
+          <div class="modal-section-title">Default Parameters</div>
+          <div class="modal-params-grid" id="modalParams"></div>
+        </div>
+      </div>
+    </div>
 
     <div class="main-grid">
       <!-- Sidebar: Only Voices -->
@@ -605,6 +681,16 @@
         const res = await fetch('/v1/voices');
         const data = await res.json();
         voicesList = data.voices || data;
+        
+        for (const voice of voicesList) {
+          try {
+            const detailRes = await fetch(`/v1/voices/${voice.voice_id}`);
+            if (detailRes.ok) {
+              voice.detail = await detailRes.json();
+            }
+          } catch (e) {}
+        }
+        
         renderLangFilter();
         renderVoiceList();
         if (voicesList.length > 0) selectVoice(voicesList[0].voice_id);
@@ -644,14 +730,87 @@
         const lang = getVoiceLang(voice);
         const quality = getModelQuality(voice.model);
         const qualityBadge = quality ? `<span class="quality ${quality}">${quality}</span>` : '';
+        const modesCount = voice.modes ? voice.modes.length : 0;
+        const modesBadge = modesCount > 0 ? `<span class="modes-badge">${modesCount} modes</span>` : '';
+        const detailBtn = `<button class="voice-detail-btn" title="View details">ℹ</button>`;
         
-        chip.innerHTML = `<span class="flag">${lang}</span>${voice.name}${qualityBadge}`;
+        chip.innerHTML = `<span class="flag">${lang}</span>${voice.name}${qualityBadge}${modesBadge}${detailBtn}`;
         if (isActive) {
-          chip.addEventListener('click', () => selectVoice(voice.voice_id));
+          chip.addEventListener('click', (e) => {
+            if (e.target.classList.contains('voice-detail-btn')) {
+              showVoiceDetail(voice.voice_id);
+            } else {
+              selectVoice(voice.voice_id);
+            }
+          });
         }
         container.appendChild(chip);
       });
     }
+
+    async function showVoiceDetail(voiceId) {
+      const voice = voicesList.find(v => v.voice_id === voiceId);
+      if (!voice) return;
+      
+      let detail = voice.detail;
+      if (!detail) {
+        try {
+          const res = await fetch(`/v1/voices/${voiceId}`);
+          detail = await res.json();
+          voice.detail = detail;
+        } catch (e) {
+          showStatus('Failed to load voice details', 'error');
+          return;
+        }
+      }
+      
+      document.getElementById('modalTitle').textContent = detail.name || voiceId;
+      document.getElementById('modalVoiceId').textContent = detail.voice_id;
+      document.getElementById('modalModel').textContent = detail.model || '-';
+      document.getElementById('modalDescription').textContent = detail.description || '-';
+      document.getElementById('modalSegmentSilence').textContent = detail.segment_silence ?? '-';
+      document.getElementById('modalCrossfade').textContent = detail.crossfade ?? '-';
+      
+      const modesContainer = document.getElementById('modalModes');
+      modesContainer.innerHTML = '';
+      const modes = detail.modes ? Object.keys(detail.modes) : [];
+      if (modes.length === 0) {
+        modesContainer.innerHTML = '<span style="color: var(--text-muted); font-size: 12px;">No modes available</span>';
+      } else {
+        modes.forEach(mode => {
+          const chip = document.createElement('span');
+          chip.className = 'modal-mode-chip';
+          chip.textContent = mode;
+          chip.style.background = MODE_COLORS[mode] ? MODE_COLORS[mode] + '33' : '';
+          chip.style.borderColor = MODE_COLORS[mode] || '';
+          modesContainer.appendChild(chip);
+        });
+      }
+      
+      const paramsContainer = document.getElementById('modalParams');
+      paramsContainer.innerHTML = '';
+      const params = detail.params || {};
+      Object.entries(params).forEach(([key, value]) => {
+        const item = document.createElement('div');
+        item.className = 'modal-item';
+        item.innerHTML = `<div class="modal-label">${key}</div><div class="modal-value">${value}</div>`;
+        paramsContainer.appendChild(item);
+      });
+      
+      if (Object.keys(params).length === 0) {
+        paramsContainer.innerHTML = '<span style="color: var(--text-muted); font-size: 12px; grid-column: span 3;">No default parameters</span>';
+      }
+      
+      document.getElementById('voiceModal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('voiceModal').classList.remove('active');
+    }
+
+    document.getElementById('voiceModal').addEventListener('click', (e) => {
+      if (e.target.id === 'voiceModal') closeModal();
+    });
 
     function selectVoice(voiceId) {
       selectedVoice = voiceId;
