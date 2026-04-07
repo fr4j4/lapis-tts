@@ -22,8 +22,11 @@ A local TTS server compatible with the ElevenLabs API, using Piper neural text-t
 git clone https://github.com/fr4j4/lapis-tts.git
 cd lapis-tts
 
-# Install dependencies and voices
+# Install dependencies
 ./scripts/install.sh
+
+# Download voice models (optional - only needed voices)
+./scripts/install.sh --download-voices
 
 # Start the server
 ./scripts/start.sh
