@@ -1,7 +1,7 @@
 {
   "id": "lapis-tts",
   "name": "LAPIS-TTS",
-  "description": "Local text-to-speech using LAPIS-TTS (Piper-based, ElevenLabs-compatible API) with advanced text processing and invisible voice effects",
+  "description": "Local text-to-speech using LAPIS-TTS (Piper-based) with advanced text processing and invisible voice effects",
   "version": "1.1.0",
   "contracts": {
     "speechProviders": ["lapis"]

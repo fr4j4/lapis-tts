@@ -148,6 +148,7 @@ function buildLapisSpeechProvider({ config, log }) {
   return {
     id: "lapis",
     displayName: "LAPIS-TTS (Local)",
+    label: "LAPIS-TTS (Local)",
     autoSelectOrder: 1,
     
     isConfigured({ cfg, providerConfig }) {

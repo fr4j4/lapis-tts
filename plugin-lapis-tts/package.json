@@ -4,7 +4,15 @@
   "description": "OpenClaw speech provider for LAPIS-TTS (Local API for Speech) with text processing and voice effects",
   "main": "index.js",
   "openclaw": {
-    "extensions": ["./index.js"]
+    "extensions": ["./index.js"],
+    "compat": {
+      "pluginApi": ">=2026.3.24-beta.2",
+      "minGatewayVersion": "2026.3.24-beta.2"
+    },
+    "build": {
+      "openclawVersion": "2026.3.24-beta.2",
+      "pluginSdkVersion": "2026.3.24-beta.2"
+    }
   },
   "keywords": [
     "openclaw",
