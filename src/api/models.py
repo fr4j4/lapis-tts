@@ -1,16 +1,8 @@
 """
-Pydantic models for the API (ElevenLabs compatible).
+Pydantic models for the API.
 """
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, List
-
-
-class VoiceSettings(BaseModel):
-    """Voice settings (ElevenLabs compatible - ignored by this local server)."""
-    stability: Optional[float] = None
-    similarity_boost: Optional[float] = None
-    style: Optional[float] = None
-    use_speaker_boost: Optional[bool] = None
 
 
 class VoiceInfo(BaseModel):
@@ -20,8 +12,6 @@ class VoiceInfo(BaseModel):
     description: str = ""
     model: str
     modes: List[str] = []
-    preview_url: Optional[str] = None
-    category: str = "premade"
 
 
 class VoiceList(BaseModel):
@@ -43,28 +33,13 @@ class VoiceDetail(BaseModel):
 
 
 class TTSRequest(BaseModel):
-    """TTS generation request (ElevenLabs compatible)."""
+    """TTS generation request."""
     text: str
-    model_id: Optional[str] = None
-    voice_settings: Optional[VoiceSettings] = None
     length_scale: Optional[float] = Field(default=None, ge=0.1, le=3.0)
     noise_scale: Optional[float] = Field(default=None, ge=0.0, le=1.0)
     noise_w_scale: Optional[float] = Field(default=None, ge=0.0, le=1.0)
     speaker_id: Optional[int] = None
-    output_format: Optional[str] = Field(default="mp3", pattern="^(wav|ogg|mp3)$")
-
-
-class TTSRequestBody(BaseModel):
-    """Alternative TTS request with voice_id in body."""
-    text: str
-    voice_id: Optional[str] = None
-    model_id: Optional[str] = None
-    voice_settings: Optional[VoiceSettings] = None
-    length_scale: Optional[float] = Field(default=None, ge=0.1, le=3.0)
-    noise_scale: Optional[float] = Field(default=None, ge=0.0, le=1.0)
-    noise_w_scale: Optional[float] = Field(default=None, ge=0.0, le=1.0)
-    speaker_id: Optional[int] = None
-    output_format: Optional[str] = Field(default="mp3", pattern="^(wav|ogg|mp3)$")
+    output_format: Optional[str] = Field(default="wav", pattern="^(wav|ogg|mp3)$")
 
 
 class ModelInfo(BaseModel):

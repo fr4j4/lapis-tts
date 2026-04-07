@@ -1,6 +1,6 @@
 # LAPIS - Local API for Speech
 
-A local TTS server compatible with the ElevenLabs API, using Piper neural text-to-speech engine with in-memory audio processing and 11 customizable voice modes.
+A local TTS server using Piper neural text-to-speech engine with in-memory audio processing and customizable voice modes.
 
 [![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
@@ -8,7 +8,7 @@ A local TTS server compatible with the ElevenLabs API, using Piper neural text-t
 
 ## Features
 
-- **ElevenLabs-compatible API** — Drop-in replacement for existing clients
+- **REST API** — Clean endpoints with annotated text support
 - **In-memory processing** — Zero temporary files, everything in RAM
 - **11 voice modes** — whisper, robotic, radio, breathy, and more
 - **Per-voice configurations** — Unique parameters and effects per voice
@@ -175,15 +175,29 @@ Returns audio binary with `Content-Disposition: attachment; filename="audio.wav"
 
 ```json
 {
+  "plugins": {
+    "entries": {
+      "lapis-tts": {
+        "enabled": true,
+        "config": {
+          "baseUrl": "http://localhost:3000",
+          "voice": "lessac-en"
+        }
+      }
+    }
+  },
   "messages": {
     "tts": {
-      "provider": "elevenlabs",
+      "auto": "tagged",
+      "provider": "lapis",
+      "modelOverrides": {
+        "enabled": true
+      },
       "providers": {
-        "elevenlabs": {
+        "lapis": {
           "enabled": true,
           "baseUrl": "http://localhost:3000",
-          "apiKey": "dummy",
-          "voiceId": "lessac-en"
+          "voice": "lessac-en"
         }
       }
     }

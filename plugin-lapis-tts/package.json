@@ -1,0 +1,28 @@
+{
+  "name": "@openclaw/lapis-tts",
+  "version": "1.1.0",
+  "description": "OpenClaw speech provider for LAPIS-TTS (Local API for Speech) with text processing and voice effects",
+  "main": "index.js",
+  "openclaw": {
+    "extensions": ["./index.js"]
+  },
+  "keywords": [
+    "openclaw",
+    "tts",
+    "speech",
+    "lapis",
+    "piper",
+    "local",
+    "voice-effects"
+  ],
+  "author": "fr4j4",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fr4j4/lapis-tts"
+  },
+  "bugs": {
+    "url": "https://github.com/fr4j4/lapis-tts/issues"
+  },
+  "homepage": "https://github.com/fr4j4/lapis-tts#readme"
+}

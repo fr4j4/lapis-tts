@@ -1,0 +1,30 @@
+{
+  "id": "lapis-tts",
+  "name": "LAPIS-TTS",
+  "description": "Local text-to-speech using LAPIS-TTS (Piper-based, ElevenLabs-compatible API) with advanced text processing and invisible voice effects",
+  "version": "1.1.0",
+  "contracts": {
+    "speechProviders": ["lapis"]
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "baseUrl": {
+        "type": "string",
+        "default": "http://127.0.0.1:3000",
+        "description": "LAPIS-TTS API base URL"
+      },
+      "voice": {
+        "type": "string",
+        "default": "robot-es",
+        "description": "Default voice ID from LAPIS-TTS (e.g., robot-es, davefx-es, amy-en)"
+      },
+      "timeoutMs": {
+        "type": "number",
+        "default": 30000,
+        "description": "Request timeout in milliseconds"
+      }
+    }
+  }
+}

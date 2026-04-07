@@ -19,6 +19,9 @@ build/
 *.swp
 *.swo
 
+# History
+.history/
+
 # Logs
 *.log
 

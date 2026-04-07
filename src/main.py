@@ -1,5 +1,5 @@
 """
-LAPIS - Local API for Speech - ElevenLabs-compatible TTS server.
+LAPIS - Local API for Speech - TTS server using Piper.
 Uses Piper as the speech synthesis engine with in-memory audio processing.
 """
 import argparse
@@ -31,7 +31,7 @@ def create_app(config_dir: str = None) -> FastAPI:
     """Create and configure the FastAPI application."""
     app = FastAPI(
         title="LAPIS - Local API for Speech",
-        description="Local TTS server compatible with ElevenLabs API using Piper",
+        description="Local TTS server using Piper with advanced text processing and voice effects",
         version="0.2.0",
     )
 
