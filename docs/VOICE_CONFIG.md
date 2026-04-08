@@ -14,7 +14,7 @@ The filename should match the `voice_id` field inside the JSON.
 
 ```json
 {
-  "voice_id": "string (required) — Unique identifier, matches ElevenLabs voice_id",
+  "voice_id": "string (required) — Unique identifier for this voice",
   "name": "string (required) — Human-readable name",
   "description": "string (optional) — Description shown in the playground",
   "model": "string (required) — Piper ONNX model name (without .onnx extension)",

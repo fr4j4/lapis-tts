@@ -23,13 +23,13 @@ git clone https://github.com/fr4j4/lapis-tts.git
 cd lapis-tts
 
 # Install the plugin in OpenClaw
-openclaw plugins install ./plugin-lapis-tts
+openclaw plugins install ./openclaw-lapis-tts
 ```
 
 ### Method 2: Install from Git (Production)
 
 ```bash
-openclaw plugins install https://github.com/fr4j4/lapis-tts/tree/master/plugin-lapis-tts
+openclaw plugins install https://github.com/fr4j4/lapis-tts/tree/master/openclaw-lapis-tts
 ```
 
 ## Quick Configuration
@@ -148,7 +148,7 @@ OpenClaw allows the model to override settings for a single response:
 ```
 Here is your response.
 
-[[tts:voiceId=robot-es model=eleven_v3 speed=1.1]]
+[[tts:voiceId=robot-es speed=1.1]]
 [[tts:text]](robotic)Processing data...(/robotic)[[/tts:text]]
 ```
 
@@ -185,7 +185,7 @@ Voices depend on the ONNX models in `~/lapis-tts/voices/`:
 
 ```bash
 openclaw plugins remove lapis-tts
-openclaw plugins install ./plugin-lapis-tts
+openclaw plugins install ./openclaw-lapis-tts
 openclaw gateway restart
 ```
 

@@ -1,6 +1,6 @@
 # API Reference
 
-LAPIS (Local API for Speech) exposes a REST API compatible with ElevenLabs. All responses include CORS headers.
+LAPIS (Local API for Speech) exposes a local TTS server with advanced voice effects. All responses include CORS headers.
 
 ## Base URL
 
@@ -220,21 +220,6 @@ For the smoothest transitions between segments:
 ```text
 <normal>System initialization complete.</normal><robotic>All protocols have been verified.</robotic>
 ```
-
-## ElevenLabs Compatibility
-
-This server is designed as a drop-in replacement for ElevenLabs:
-
-| Feature | Status |
-|---------|--------|
-| `POST /v1/text-to-speech/{voice_id}` | Compatible |
-| `GET /v1/voices` | Compatible (extra fields added) |
-| `GET /v1/voices/{voice_id}` | Compatible (extra fields added) |
-| Response format (`audio/wav`) | Compatible |
-| `model_id` parameter | Accepted, ignored |
-| `voice_settings` in body | Not implemented |
-
-Clients that only use `voice_id` and `text` will work without modification.
 
 ## Playground
 
