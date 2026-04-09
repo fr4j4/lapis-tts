@@ -192,9 +192,10 @@ function buildLapisSpeechProvider({ config, log }) {
 
       const url = new URL(`/v1/text-to-speech/${effectiveVoice}`, effectiveBaseUrl);
       
-      const requestBody = JSON.stringify({
-        text: textToSynthesize,
-      });
+       const requestBody = JSON.stringify({
+         text: textToSynthesize,
+         output_format: 'ogg'  // Request OGG explicitly
+       });
 
       log?.debug?.('Requesting TTS from:', url.toString());
 
@@ -205,11 +206,11 @@ function buildLapisSpeechProvider({ config, log }) {
           url,
           {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Content-Length': Buffer.byteLength(requestBody),
-              'Accept': 'audio/wav'
-            },
+             headers: {
+               'Content-Type': 'application/json',
+               'Content-Length': Buffer.byteLength(requestBody),
+               'Accept': 'audio/ogg'
+             },
             timeout: effectiveTimeout
           },
           (res) => {
@@ -236,13 +237,13 @@ function buildLapisSpeechProvider({ config, log }) {
               
               log?.info?.(`TTS generated: ${audioBuffer.length} bytes, voice: ${effectiveVoice}`);
               
-              resolve({
-                success: true,
-                audioBuffer,
-                fileExtension: '.wav',
-                outputFormat: 'audio/wav',
-                voiceCompatible: true,
-                provider: 'lapis',
+               resolve({
+                 success: true,
+                 audioBuffer,
+                 fileExtension: '.ogg',
+                 outputFormat: 'audio/ogg',
+                 voiceCompatible: true,
+                 provider: 'lapis',
                 metadata: {
                   voice: effectiveVoice,
                   hasTtsContent,

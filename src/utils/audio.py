@@ -178,7 +178,7 @@ def convert_audio_format(audio_bytes: bytes, output_format: str) -> bytes:
         channels, sample_rate = 1, 22050
 
     if output_format == "ogg":
-        codec = "libvorbis"
+        codec = "libopus"
         container = "ogg"
     elif output_format == "mp3":
         codec = "libmp3lame"
