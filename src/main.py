@@ -15,6 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from src.api.routes import router, init_router
+from src.api.benchmark import router as benchmark_router, init_benchmark_router
 from src.tts.engine import TTSEngine
 from src.voice_config.manager import VoiceConfigManager
 from src.effects.registry import EffectsRegistry
@@ -83,7 +84,9 @@ def create_app(config_dir: str = None) -> FastAPI:
 
     # Initialize router with dependencies
     init_router(engine, config_manager, effects, master_config)
+    init_benchmark_router(engine, config_manager)
     app.include_router(router)
+    app.include_router(benchmark_router)
 
     # Mount static files (playground web UI)
     public_dir = base_dir / "public"
@@ -93,6 +96,10 @@ def create_app(config_dir: str = None) -> FastAPI:
         @app.get("/")
         async def root():
             return FileResponse(public_dir / "index.html")
+
+        @app.get("/benchmark.html")
+        async def benchmark():
+            return FileResponse(public_dir / "benchmark.html")
 
     # Initialization log
     voices = config_manager.list_voices()
