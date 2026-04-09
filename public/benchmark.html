@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LAPIS Benchmark Suite</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-dark: #0d1117;
+      --bg-card: #161b22;
+      --bg-input: #21262d;
+      --border: #30363d;
+      --accent: #58a6ff;
+      --accent-dim: #1f6feb;
+      --text: #c9d1d9;
+      --text-muted: #8b949e;
+      --success: #238636;
+      --error: #da3633;
+      --warning: #d29922;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 16px;
+      line-height: 1.5;
+    }
+
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    header h1 { color: var(--accent); font-size: 1.5rem; font-weight: 600; }
+    header .links a { color: var(--text-muted); text-decoration: none; margin-left: 16px; font-size: 14px; }
+    header .links a:hover { color: var(--accent); }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+    .tab {
+      padding: 10px 20px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 6px 6px 0 0;
+      transition: all 0.15s;
+    }
+    .tab:hover { color: var(--text); background: var(--bg-input); }
+    .tab.active {
+      color: var(--accent);
+      background: var(--bg-card);
+      border-bottom: 2px solid var(--accent);
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Section */
+    .section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .section-title {
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+
+    /* Grid */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    @media (max-width: 800px) {
+      .grid-2, .grid-4 { grid-template-columns: 1fr; }
+    }
+
+    /* Cards */
+    .stat-card {
+      background: var(--bg-input);
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+    }
+    .stat-card .value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .stat-card .label {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Info cards */
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { color: var(--text-muted); }
+    .info-value { color: var(--text); font-weight: 500; }
+
+    /* Buttons */
+    .btn {
+      background: var(--accent-dim);
+      border: none;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn:hover { filter: brightness(1.1); }
+    .btn:disabled { background: var(--border); cursor: not-allowed; }
+    .btn-success { background: var(--success); }
+    .btn-danger { background: var(--error); }
+
+    /* Form elements */
+    .form-group { margin-bottom: 16px; }
+    .form-label {
+      display: block;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 14px;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    /* Progress */
+    .progress-bar {
+      height: 24px;
+      background: var(--bg-input);
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 12px 0;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--accent-dim);
+      transition: width 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #fff;
+    }
+
+    /* Table */
+    .table-container { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th, td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      background: var(--bg-input);
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 11px;
+    }
+    tr:hover { background: var(--bg-input); }
+    .success { color: var(--success); }
+    .error { color: var(--error); }
+
+    /* Quality badges */
+    .quality {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .quality.high { background: #1a472a; color: #4ade80; }
+    .quality.medium { background: #3d2f1e; color: #fbbf24; }
+    .quality.low { background: #3a1a1a; color: #f87171; }
+
+    /* Expandable rows */
+    .voice-row { cursor: pointer; }
+    .voice-row:hover { background: var(--bg-input); }
+    .voice-header { display: flex; align-items: center; gap: 8px; }
+    .expand-icon { 
+      transition: transform 0.2s; 
+      font-size: 12px;
+    }
+    .voice-row.expanded .expand-icon { transform: rotate(90deg); }
+    .runs-detail { 
+      padding: 12px 16px;
+      background: var(--bg-dark);
+    }
+    .voice-row.expanded + .runs-detail-row { display: table-row; }
+    .runs-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .run-chip {
+      background: var(--bg-input);
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-family: monospace;
+    }
+    .run-chip.fastest { background: #1a472a; color: #4ade80; }
+    .run-chip.slowest { background: #3a1a1a; color: #f87171; }
+    
+    /* Chart section */
+    .view-toggle {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .view-toggle-btn {
+      padding: 8px 16px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .view-toggle-btn:hover { border-color: var(--accent); }
+    .view-toggle-btn.active {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .chart-container {
+      position: relative;
+      height: 300px;
+      margin-top: 16px;
+    }
+
+    /* Trend indicators */
+    .trend-up { color: #f87171; }
+    .trend-down { color: #4ade80; }
+    .trend-stable { color: #8b949e; }
+
+    /* Sub-tabs */
+    .sub-tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 16px;
+    }
+    .sub-tab {
+      padding: 8px 16px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.15s;
+    }
+    .sub-tab:hover { border-color: var(--accent); color: var(--text); }
+    .sub-tab.active {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .sub-tab-content { display: none; }
+    .sub-tab-content.active { display: block; }
+
+    /* Test Suite Tabs */
+    .test-suite-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .ts-tab {
+      padding: 8px 16px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.15s;
+    }
+    .ts-tab:hover { border-color: var(--accent); }
+    .ts-tab.active {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    /* Test Preview */
+    .test-preview {
+      background: var(--bg-input);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .test-text {
+      font-family: monospace;
+      font-size: 14px;
+      color: var(--text);
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+    .test-stats {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* System Info Grid */
+    .system-info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    /* Dashboard */
+    .dashboard-stat {
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      background: var(--bg-input);
+      border-radius: 8px;
+    }
+    .dashboard-stat .value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .dashboard-stat .label {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .system-group {
+      background: var(--bg-input);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .system-group-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .system-group-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .system-group-stats {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .system-group-benchmarks {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+    .benchmark-mini {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      font-size: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .benchmark-mini:last-child { border-bottom: none; }
+
+    /* Voice chips */
+    .voice-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .voice-chip {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 6px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .voice-chip:hover { border-color: var(--accent); }
+    .voice-chip.selected {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+    }
+
+    /* Status */
+    .status { padding: 10px; border-radius: 6px; margin: 12px 0; font-size: 13px; }
+    .status.loading { background: var(--bg-input); color: var(--text-muted); }
+    .status.success { background: rgba(35, 134, 54, 0.2); color: var(--success); }
+    .status.error { background: rgba(218, 54, 51, 0.2); color: var(--error); }
+
+    /* Detail view */
+    .detail-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .detail-meta {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .detail-meta-item {
+      font-size: 13px;
+    }
+    .detail-meta-item .label { color: var(--text-muted); }
+
+    /* Spinner */
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>LAPIS Benchmark Suite</h1>
+      <div class="links">
+        <a href="/">Playground</a>
+        <a href="/health">Health</a>
+        <a href="/docs">Docs</a>
+      </div>
+    </header>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="dashboard">Dashboard</button>
+      <button class="tab" data-tab="run">Run Test</button>
+      <button class="tab" data-tab="history">History</button>
+      <button class="tab" data-tab="system">System Info</button>
+    </div>
+
+    <!-- Dashboard Tab -->
+    <div id="dashboard" class="tab-content active">
+      <div class="section">
+        <div class="section-title">Global Statistics</div>
+        <div class="grid-4" id="globalStats">
+          <div class="dashboard-stat">
+            <div class="value" id="totalBenchmarks">0</div>
+            <div class="label">Total Benchmarks</div>
+          </div>
+          <div class="dashboard-stat">
+            <div class="value" id="globalAvgLatency">-</div>
+            <div class="label">Global Avg Latency (ms)</div>
+          </div>
+          <div class="dashboard-stat">
+            <div class="value" id="bestVoice">-</div>
+            <div class="label">Best Voice</div>
+          </div>
+          <div class="dashboard-stat">
+            <div class="value" id="totalVoicesTested">0</div>
+            <div class="label">Voices Tested</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Performance by System</div>
+        <div id="performanceBySystem">
+          <div style="color: var(--text-muted); font-size: 13px;">Loading...</div>
+        </div>
+      </div>
+
+      <div class="section" id="lastBenchmarkSection" style="display: none;">
+        <div class="section-title">Latest Benchmark</div>
+        <div class="grid-2">
+          <div>
+            <div class="info-row">
+              <span class="info-label">Test ID</span>
+              <span class="info-value" id="lastTestId">-</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Date</span>
+              <span class="info-value" id="lastDate">-</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Voices</span>
+              <span class="info-value" id="lastVoices">-</span>
+            </div>
+          </div>
+          <div>
+            <div class="grid-2">
+              <div class="stat-card">
+                <div class="value" id="lastAvgLatency">-</div>
+                <div class="label">Avg Latency (ms)</div>
+              </div>
+              <div class="stat-card">
+                <div class="value" id="lastThroughput">-</div>
+                <div class="label">Chars/Second</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Run Test Tab -->
+    <div id="run" class="tab-content">
+      <!-- Sub-tabs for Run Test -->
+      <div class="sub-tabs">
+        <button class="sub-tab active" data-subtab="config">Config</button>
+        <button class="sub-tab" data-subtab="voices">Voices</button>
+        <button class="sub-tab" data-subtab="system">System</button>
+      </div>
+      
+      <!-- Sub-tab: Config -->
+      <div id="run-config" class="sub-tab-content active">
+        <div class="section">
+          <div class="section-title">Test Suite</div>
+          
+          <div class="test-suite-tabs" id="testSuiteTabs">
+            <button class="ts-tab" data-suite="short">Short</button>
+            <button class="ts-tab" data-suite="medium">Medium</button>
+            <button class="ts-tab active" data-suite="long">Long</button>
+            <button class="ts-tab" data-suite="numbers">Numbers</button>
+            <button class="ts-tab" data-suite="custom">Custom</button>
+          </div>
+          
+          <div class="test-preview" id="testPreview">
+            <div class="test-text" id="testTextPreview"></div>
+            <div class="test-stats" id="testStats"></div>
+          </div>
+          
+          <div class="form-group" id="customTextGroup" style="display: none; margin-top: 12px;">
+            <label class="form-label">Custom Text</label>
+            <textarea id="customText" rows="3" placeholder="Enter your custom text here..."></textarea>
+          </div>
+        </div>
+        
+        <div class="section">
+          <div class="section-title">Repetitions</div>
+          <select id="repetitions">
+            <option value="1" selected>1x</option>
+            <option value="2">2x</option>
+            <option value="3">3x</option>
+            <option value="5">5x</option>
+            <option value="10">10x</option>
+            <option value="15">15x</option>
+            <option value="20">20x</option>
+          </select>
+        </div>
+        
+        <button class="btn btn-success" id="runBenchmarkBtn" style="margin-top: 16px;">
+          ▶ Run Benchmark
+        </button>
+        
+        <div id="runStatus" class="status" style="display: none;"></div>
+        
+        <div class="progress-bar" id="progressBar" style="display: none;">
+          <div class="progress-fill" id="progressFill" style="width: 0%;">0%</div>
+        </div>
+
+        <!-- Results Section - shown after benchmark completes -->
+        <div class="section" id="resultsSection" style="display: none; margin-top: 16px;">
+          <div class="section-title">Results</div>
+          
+          <div class="view-toggle">
+            <button class="view-toggle-btn active" data-view="table">Table View</button>
+            <button class="view-toggle-btn" data-view="chart">Chart View</button>
+          </div>
+          
+          <div id="tableView">
+            <div class="table-container">
+              <table id="resultsTable">
+                <thead>
+                  <tr>
+                    <th style="width: 30px;"></th>
+                    <th>Voice</th>
+                    <th>Quality</th>
+                    <th title="Latency (ms)">Latency (ms)</th>
+                    <th title="Minimum latency (ms)">Min (ms)</th>
+                    <th title="Maximum latency (ms)">Max (ms)</th>
+                    <th title="Standard deviation (ms)">Std Dev</th>
+                    <th title="Latency trend: ↑ degrading, ↓ improving, → stable">Trend</th>
+                    <th title="Characters synthesized per second">Chars/sec</th>
+                    <th title="Number of test runs">Runs</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+          
+          <div id="chartView" style="display: none;">
+            <div class="chart-container">
+              <canvas id="resultsChart"></canvas>
+            </div>
+          </div>
+          
+          <div class="grid-4" style="margin-top: 16px;">
+            <div class="stat-card">
+              <div class="value" id="resAvgLatency">-</div>
+              <div class="label">Avg Latency</div>
+            </div>
+            <div class="stat-card">
+              <div class="value" id="resThroughput">-</div>
+              <div class="label">Avg Ch/s</div>
+            </div>
+            <div class="stat-card">
+              <div class="value" id="resSuccess">-</div>
+              <div class="label">Success Rate</div>
+            </div>
+            <div class="stat-card">
+              <div class="value" id="resFastest">-</div>
+              <div class="label">Fastest Voice</div>
+            </div>
+          </div>
+          
+          <button class="btn" id="viewDetailBtn" style="margin-top: 16px;">
+            View Full Details
+          </button>
+        </div>
+      </div>
+
+      <!-- Sub-tab: Voices -->
+      <div id="run-voices" class="sub-tab-content">
+        <div class="section">
+          <div class="section-title">Available Voices</div>
+          <div class="voice-chips" id="voiceChips">
+            <span style="color: var(--text-muted); font-size: 12px;">Loading voices...</span>
+          </div>
+        </div>
+        
+        <div class="section">
+          <div class="section-title">Voice Details</div>
+          <div class="table-container">
+            <table id="voiceDetailsTable">
+              <thead>
+                <tr>
+                  <th>Voice ID</th>
+                  <th>Name</th>
+                  <th>Model File</th>
+                  <th>Quality</th>
+                  <th>Modes</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Sub-tab: System -->
+      <div id="run-system" class="sub-tab-content">
+        <div class="section">
+          <div class="section-title">Current System</div>
+          <div class="system-info-grid" id="currentSystemInfo">
+            <div class="info-row"><span class="info-label">Hostname</span><span class="info-value" id="sysHostname">-</span></div>
+            <div class="info-row"><span class="info-label">CPU Cores</span><span class="info-value" id="sysCpuCoresTab">-</span></div>
+            <div class="info-row"><span class="info-label">CPU Model</span><span class="info-value" id="sysCpuModelTab">-</span></div>
+            <div class="info-row"><span class="info-label">CPU Frequency</span><span class="info-value" id="sysCpuFreqTab">-</span></div>
+            <div class="info-row"><span class="info-label">RAM Total</span><span class="info-value" id="sysRamTotalTab">-</span></div>
+            <div class="info-row"><span class="info-label">OS</span><span class="info-value" id="sysOsTab">-</span></div>
+            <div class="info-row"><span class="info-label">Python</span><span class="info-value" id="sysPyVersionTab">-</span></div>
+            <div class="info-row"><span class="info-label">Piper</span><span class="info-value" id="sysPiperVersionTab">-</span></div>
+            <div class="info-row"><span class="info-label">ONNX Runtime</span><span class="info-value" id="sysOnnxVersionTab">-</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- History Tab -->
+    <div id="history" class="tab-content">
+      <div class="section">
+        <div class="section-title">Benchmark History</div>
+        <div class="table-container">
+          <table id="historyTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Date</th>
+                <th title="Number of voices tested">Voices</th>
+                <th title="Average latency in milliseconds">Avg Latency (ms)</th>
+                <th title="Successful / Total tests">Success</th>
+                <th title="Average characters synthesized per second">Throughput (ch/s)</th>
+                <th title="Number of repetitions per voice">Runs</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="section" id="historyDetailSection" style="display: none;">
+        <div class="detail-header">
+          <div class="section-title">Benchmark Details</div>
+          <button class="btn" id="exportCsvBtn">Export CSV</button>
+        </div>
+        
+        <div class="detail-meta">
+          <div class="detail-meta-item">
+            <span class="label">Test ID: </span>
+            <span id="detailTestId">-</span>
+          </div>
+          <div class="detail-meta-item">
+            <span class="label">Date: </span>
+            <span id="detailDate">-</span>
+          </div>
+          <div class="detail-meta-item">
+            <span class="label">Text: </span>
+            <span id="detailText">-</span>
+          </div>
+        </div>
+        
+        <!-- System Info Section -->
+        <div class="section" style="margin-bottom: 16px;">
+          <div class="section-title">System Used</div>
+          <div class="detail-meta" id="benchmarkSystemInfo">
+            <div class="detail-meta-item">
+              <span class="label">CPU: </span>
+              <span id="detailCpuModel">-</span> (<span id="detailCpuCores">-</span> cores @ <span id="detailCpuFreq">-</span>MHz)
+            </div>
+            <div class="detail-meta-item">
+              <span class="label">RAM: </span>
+              <span id="detailRamTotal">-</span> GB (<span id="detailRamAvail">-</span> GB available)
+            </div>
+            <div class="detail-meta-item">
+              <span class="label">OS: </span>
+              <span id="detailOsName">-</span> <span id="detailOsVersion">-</span>
+            </div>
+            <div class="detail-meta-item">
+              <span class="label">Software: </span>
+              <span id="detailPythonVersion">-</span>, Piper: <span id="detailPiperVersion">-</span>, ONNX: <span id="detailOnnxVersion">-</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="view-toggle" id="detailViewToggle" style="margin-bottom: 16px;">
+          <button class="view-toggle-btn active" data-view="table">Table View</button>
+          <button class="view-toggle-btn" data-view="chart">Chart View</button>
+        </div>
+        
+        <div id="detailTableView">
+          <div class="table-container">
+            <table id="detailTable">
+              <thead>
+                <tr>
+                  <th style="width: 30px;"></th>
+                  <th>Voice</th>
+                  <th title="Latency (ms)">Latency (ms)</th>
+                  <th title="Minimum latency (ms)">Min (ms)</th>
+                  <th title="Maximum latency (ms)">Max (ms)</th>
+                  <th title="Standard deviation (ms)">Std Dev</th>
+                  <th title="Latency trend: ↑ degrading, ↓ improving, → stable">Trend</th>
+                  <th title="Characters synthesized per second">Chars/sec</th>
+                  <th title="Number of test runs">Runs</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        
+        <div id="detailChartView" style="display: none;">
+          <div class="chart-container">
+            <canvas id="detailChart"></canvas>
+          </div>
+        </div>
+
+        <div class="grid-4" style="margin-top: 16px;">
+          <div class="stat-card">
+            <div class="value" id="detailAvgLatency">-</div>
+            <div class="label">Avg Latency</div>
+          </div>
+          <div class="stat-card">
+            <div class="value" id="detailMinLatency">-</div>
+            <div class="label">Min Latency</div>
+          </div>
+          <div class="stat-card">
+            <div class="value" id="detailMaxLatency">-</div>
+            <div class="label">Max Latency</div>
+          </div>
+          <div class="stat-card">
+            <div class="value" id="detailAvgThroughput">-</div>
+            <div class="label">Avg Ch/s</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- System Info Tab -->
+    <div class="tab-content" id="system">
+      <div class="section">
+        <div class="section-title">System Information</div>
+        <div class="grid-2">
+          <div>
+            <div class="info-row">
+              <span class="info-label">CPU Model</span>
+              <span class="info-value" id="sysCpuModel">Loading...</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">CPU Cores</span>
+              <span class="info-value" id="sysCpuCores">-</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">CPU Frequency</span>
+              <span class="info-value" id="sysCpuFreq">-</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Total RAM</span>
+              <span class="info-value" id="sysRamTotal">-</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Available RAM</span>
+              <span class="info-value" id="sysRamAvail">-</span>
+            </div>
+          </div>
+          <div>
+            <div class="info-row">
+              <span class="info-label">OS</span>
+              <span class="info-value" id="sysOs">-</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Python Version</span>
+              <span class="info-value" id="sysPyVersion">-</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Process PID</span>
+              <span class="info-value" id="sysPid">-</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Process Memory</span>
+              <span class="info-value" id="sysMem">-</span>
+            </div>
+          </div>
+        </div>
+        <button class="btn" id="refreshSysBtn" style="margin-top: 16px;">Refresh</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Test texts
+    const TEST_TEXTS = {
+      short: "Hello world, this is a test.",
+      medium: "Welcome to the LAPIS text to speech system. This is a comprehensive test of the voice synthesis capabilities. The system uses Piper for high quality neural voice generation.",
+      long: "This is a comprehensive test of the text to speech system. The system is designed to provide high quality voice synthesis with low latency. It supports multiple voices and languages, and includes various audio effects and processing options. The benchmark suite allows you to measure performance metrics like latency, throughput, and resource usage across different hardware configurations.",
+      numbers: "The order total is $1,234.56. Call 555-0123 for assistance. Date: 2024-01-15. Item #42. Pi is approximately 3.14159."
+    };
+
+    let voicesList = [];
+    let selectedVoices = new Set();
+    let currentBenchmarkId = null;
+
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+      });
+    });
+
+    // Sub-tab switching for Run Test
+    document.querySelectorAll('.sub-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.sub-tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('run-' + tab.dataset.subtab).classList.add('active');
+      });
+    });
+
+    // Test Suite tabs
+    let currentTestSuite = 'long';
+    document.querySelectorAll('.ts-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.ts-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentTestSuite = tab.dataset.suite;
+        updateTestPreview();
+        if (currentTestSuite === 'custom') {
+          document.getElementById('customTextGroup').style.display = 'block';
+        } else {
+          document.getElementById('customTextGroup').style.display = 'none';
+        }
+      });
+    });
+
+    function updateTestPreview() {
+      const text = currentTestSuite === 'custom' 
+        ? document.getElementById('customText').value 
+        : TEST_TEXTS[currentTestSuite];
+      
+      document.getElementById('testTextPreview').textContent = text || 'No text';
+      
+      const chars = text.length;
+      const words = text.split(/\s+/).filter(w => w).length;
+      const sentences = (text.match(/[.!?]/g) || []).length || (chars > 0 ? 1 : 0);
+      
+      document.getElementById('testStats').textContent = `${chars} chars · ${words} words · ${sentences} sentences`;
+    }
+
+    // Custom text listener
+    document.getElementById('customText').addEventListener('input', updateTestPreview);
+
+    // Initialize test preview
+    updateTestPreview();
+
+    // Load voices
+    async function loadVoices() {
+      try {
+        const res = await fetch('/v1/voices');
+        const data = await res.json();
+        voicesList = data.voices || data;
+        renderVoiceChips();
+      } catch (e) {
+        console.error('Failed to load voices:', e);
+      }
+    }
+
+    function renderVoiceChips() {
+      const container = document.getElementById('voiceChips');
+      container.innerHTML = voicesList.map(v => `
+        <div class="voice-chip" data-voice="${v.voice_id}">
+          ${v.voice_id}
+        </div>
+      `).join('');
+
+      container.querySelectorAll('.voice-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          chip.classList.toggle('selected');
+          const voiceId = chip.dataset.voice;
+          if (selectedVoices.has(voiceId)) {
+            selectedVoices.delete(voiceId);
+          } else {
+            selectedVoices.add(voiceId);
+          }
+        });
+      });
+
+      // Select all by default
+      document.querySelectorAll('.voice-chip').forEach(c => c.classList.add('selected'));
+      voicesList.forEach(v => selectedVoices.add(v.voice_id));
+    }
+
+    // Run benchmark
+    document.getElementById('runBenchmarkBtn').addEventListener('click', async () => {
+      const text = currentTestSuite === 'custom' 
+        ? document.getElementById('customText').value 
+        : TEST_TEXTS[currentTestSuite];
+      
+      const voices = Array.from(selectedVoices);
+      const repetitions = parseInt(document.getElementById('repetitions').value);
+
+      if (!text.trim()) {
+        alert('Please enter some text');
+        return;
+      }
+
+      const btn = document.getElementById('runBenchmarkBtn');
+      const status = document.getElementById('runStatus');
+      const progress = document.getElementById('progressBar');
+      const fill = document.getElementById('progressFill');
+      const resultsSection = document.getElementById('resultsSection');
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Running...';
+      status.style.display = 'block';
+      status.className = 'status loading';
+      status.textContent = 'Starting benchmark...';
+      progress.style.display = 'block';
+      fill.style.width = '0%';
+      if (resultsSection) resultsSection.style.display = 'none';
+
+      try {
+        const res = await fetch('/v1/benchmark/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text, voices, repetitions })
+        });
+
+        if (!res.ok) throw new Error('Benchmark failed');
+
+        const data = await res.json();
+        
+        status.className = 'status success';
+        status.textContent = `Benchmark completed! Test ID: ${data.test_id}`;
+        
+        currentBenchmarkId = data.test_id;
+        
+        // Use results from the same response (no need for extra fetch)
+        renderResults(data);
+        
+        // Switch to history tab
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelector('[data-tab="history"]').classList.add('active');
+        document.getElementById('history').classList.add('active');
+        
+        // Load history and show detail
+        loadHistory().then(() => showBenchmarkDetail(data.test_id));
+
+      } catch (e) {
+        status.className = 'status error';
+        status.textContent = 'Error: ' + e.message;
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '▶ Run Benchmark';
+      }
+    });
+
+    function renderResults(data) {
+      // Group results by voice
+      const grouped = {};
+      data.results.forEach((r, idx) => {
+        if (!grouped[r.voice_id]) {
+          grouped[r.voice_id] = [];
+        }
+        grouped[r.voice_id].push({ ...r, runIndex: idx + 1 });
+      });
+      
+      // Calculate stats per voice
+      const voiceStats = Object.entries(grouped).map(([voiceId, runs]) => {
+        const latencies = runs.map(r => r.latency_ms);
+        const avg = latencies.reduce((a, b) => a + b, 0) / latencies.length;
+        const min = Math.min(...latencies);
+        const max = Math.max(...latencies);
+        
+        // Std dev
+        const variance = latencies.reduce((sum, l) => sum + Math.pow(l - avg, 2), 0) / latencies.length;
+        const stdDev = Math.sqrt(variance);
+        
+        // Trend (first half vs second half)
+        const half = Math.floor(latencies.length / 2);
+        const firstHalfAvg = latencies.slice(0, half).reduce((a, b) => a + b, 0) / half;
+        const secondHalfAvg = latencies.slice(half).reduce((a, b) => a + b, 0) / (latencies.length - half);
+        const trend = secondHalfAvg > firstHalfAvg + 5 ? '↑' : secondHalfAvg < firstHalfAvg - 5 ? '↓' : '→';
+        
+        // Ch/s average
+        const avgChs = runs.reduce((a, r) => a + r.chars_per_second, 0) / runs.length;
+        
+        // Quality
+        const model = runs[0].model_load_time_ms > 0 ? 'medium' : 'medium';
+        
+        return {
+          voiceId,
+          runs,
+          avg: Math.round(avg),
+          min: Math.round(min),
+          max: Math.round(max),
+          stdDev: Math.round(stdDev * 10) / 10,
+          trend,
+          avgChs: Math.round(avgChs),
+          quality: model.includes('high') ? 'high' : model.includes('low') ? 'low' : 'medium'
+        };
+      });
+      
+      // Sort by avg latency
+      voiceStats.sort((a, b) => a.avg - b.avg);
+      
+      // Render table with expandable rows
+      const tbody = document.querySelector('#resultsTable tbody');
+      if (!tbody) {
+        console.error('Results table not found');
+        return;
+      }
+      tbody.innerHTML = voiceStats.map((v, idx) => `
+        <tr class="voice-row" data-idx="${idx}" onclick="toggleVoiceRow(${idx})">
+          <td><span class="expand-icon" id="icon-${idx}">▶</span></td>
+          <td><strong>${v.voiceId}</strong></td>
+          <td><span class="quality ${v.quality}">${v.quality}</span></td>
+          <td><strong>${v.avg}</strong></td>
+          <td>${v.min}</td>
+          <td>${v.max}</td>
+          <td>±${v.stdDev}</td>
+          <td class="${v.trend === '↑' ? 'trend-up' : v.trend === '↓' ? 'trend-down' : 'trend-stable'}">${v.trend}</td>
+          <td>${v.avgChs}</td>
+          <td>${v.runs.length}</td>
+        </tr>
+          <tr class="runs-detail-row" id="detail-row-${idx}" style="display: none;">
+          <td colspan="9">
+            <div class="runs-detail">
+              ${v.runs.length === 1 ? `
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 8px;">
+                  <div class="stat-card" style="padding: 8px;">
+                    <div class="value" style="font-size: 14px;">${v.runs[0].audio_duration_sec?.toFixed(1) || 0}s</div>
+                    <div class="label" style="font-size: 10px;">Audio Duration</div>
+                  </div>
+                  <div class="stat-card" style="padding: 8px;">
+                    <div class="value" style="font-size: 14px;">${Math.round((v.runs[0].audio_size_bytes || 0) / 1024)}KB</div>
+                    <div class="label" style="font-size: 10px;">Audio Size</div>
+                  </div>
+                  <div class="stat-card" style="padding: 8px;">
+                    <div class="value" style="font-size: 14px;">${v.runs[0].text_chars || 0}</div>
+                    <div class="label" style="font-size: 10px;">Chars</div>
+                  </div>
+                  <div class="stat-card" style="padding: 8px;">
+                    <div class="value" style="font-size: 14px;">${v.runs[0].text_words || 0}</div>
+                    <div class="label" style="font-size: 10px;">Words</div>
+                  </div>
+                </div>
+                <div style="font-size: 11px; color: var(--text-muted);">
+                  Synthesis: ${v.runs[0].synthesis_time_ms?.toFixed(1) || 0}ms · ${v.runs[0].chars_per_second?.toFixed(1) || 0} chars/sec
+                </div>
+              ` : `
+                <div class="runs-grid">
+                  ${v.runs.map((r, i) => {
+                    const isFastest = r.latency_ms === v.min;
+                    const isSlowest = r.latency_ms === v.max;
+                    return `<span class="run-chip ${isFastest ? 'fastest' : ''} ${isSlowest ? 'slowest' : ''}">Run ${i+1}: ${r.latency_ms}ms</span>`;
+                  }).join('')}
+                </div>
+                <div style="margin-top: 8px; font-size: 12px; color: var(--text-muted);">
+                  Total: ${v.runs.length} runs · ${v.runs[0]?.text_chars || 0} chars · ${v.runs[0]?.text_words || 0} words
+                </div>
+              `}
+            </div>
+          </td>
+        </tr>
+      `).join('');
+      
+      // Update summary cards
+      document.getElementById('resAvgLatency').textContent = data.aggregate.avg_latency_ms + ' ms';
+      document.getElementById('resThroughput').textContent = data.aggregate.avg_chars_per_second;
+      document.getElementById('resSuccess').textContent = ((data.aggregate.successful / data.aggregate.total_tests) * 100).toFixed(0) + '%';
+      document.getElementById('resFastest').textContent = voiceStats[0].voiceId;
+      
+      // Render chart
+      renderChart(voiceStats);
+      
+      document.getElementById('resultsSection').style.display = 'block';
+    }
+
+    function toggleVoiceRow(idx) {
+      const row = document.querySelector(`tr[data-idx="${idx}"]`);
+      const detailRow = document.getElementById('detail-row-' + idx);
+      const icon = document.getElementById('icon-' + idx);
+      
+      if (detailRow && row) {
+        const isExpanded = row.classList.contains('expanded');
+        row.classList.toggle('expanded');
+        detailRow.style.display = isExpanded ? 'none' : 'table-row';
+        if (icon) {
+          icon.style.transform = isExpanded ? '' : 'rotate(90deg)';
+        }
+      }
+    }
+
+    function toggleDetailRow(row, idx) {
+      const detailRow = document.getElementById('detail-row-' + idx);
+      const icon = document.getElementById('detail-icon-' + idx);
+      
+      if (detailRow) {
+        const isExpanded = row.classList.contains('expanded');
+        row.classList.toggle('expanded');
+        detailRow.style.display = isExpanded ? 'none' : 'table-row';
+        if (icon) {
+          icon.style.transform = isExpanded ? '' : 'rotate(90deg)';
+        }
+      }
+    }
+
+    let resultsChartInstance = null;
+    let detailChartInstance = null;
+    
+    function renderDetailChart(voiceStats) {
+      const ctx = document.getElementById('detailChart');
+      if (!ctx) return;
+      
+      const colors = ['#4ade80', '#60a5fa', '#f472b6', '#fbbf24', '#a78bfa', '#f87171', '#34d399'];
+      const datasets = voiceStats.map((v, i) => ({
+        label: v.voiceId,
+        data: v.runs.map(r => r.latency_ms),
+        borderColor: colors[i % colors.length],
+        backgroundColor: colors[i % colors.length] + '20',
+        tension: 0.3,
+        fill: false,
+      }));
+      
+      const labels = voiceStats[0].runs.map((_, i) => `Run ${i + 1}`);
+      
+      if (detailChartInstance) {
+        detailChartInstance.destroy();
+      }
+      
+      detailChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'top', labels: { color: '#c9d1d9' } },
+            title: { display: true, text: 'Latency per Run by Voice', color: '#c9d1d9', font: { size: 16 } }
+          },
+          scales: {
+            x: { 
+              ticks: { color: '#8b949e' },
+              grid: { color: '#30363d' }
+            },
+            y: { 
+              ticks: { color: '#8b949e' },
+              grid: { color: '#30363d' },
+              title: { display: true, text: 'Latency (ms)', color: '#8b949e' }
+            }
+          }
+        }
+      });
+    }
+    
+    function renderChart(voiceStats) {
+      const ctx = document.getElementById('resultsChart').getContext('2d');
+      
+      // Prepare datasets
+      const colors = ['#4ade80', '#60a5fa', '#f472b6', '#fbbf24', '#a78bfa', '#f87171', '#34d399'];
+      const datasets = voiceStats.map((v, i) => ({
+        label: v.voiceId,
+        data: v.runs.map(r => r.latency_ms),
+        borderColor: colors[i % colors.length],
+        backgroundColor: colors[i % colors.length] + '20',
+        tension: 0.3,
+        fill: false,
+      }));
+      
+      const labels = voiceStats[0].runs.map((_, i) => `Run ${i + 1}`);
+      
+      if (resultsChartInstance) {
+        resultsChartInstance.destroy();
+      }
+      
+      resultsChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'top', labels: { color: '#c9d1d9' } },
+            title: { display: true, text: 'Latency per Run by Voice', color: '#c9d1d9', font: { size: 16 } }
+          },
+          scales: {
+            x: { 
+              ticks: { color: '#8b949e' },
+              grid: { color: '#30363d' }
+            },
+            y: { 
+              ticks: { color: '#8b949e' },
+              grid: { color: '#30363d' },
+              title: { display: true, text: 'Latency (ms)', color: '#8b949e' }
+            }
+          }
+        }
+      });
+    }
+
+    // View toggle handlers
+    document.querySelectorAll('.view-toggle-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const toggle = btn.closest('.view-toggle');
+        toggle.querySelectorAll('.view-toggle-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        const view = btn.dataset.view;
+        const parent = btn.closest('.section') || btn.closest('#historyDetailSection');
+        
+        if (parent) {
+          const tableView = parent.querySelector('#tableView') || parent.querySelector('#detailTableView');
+          const chartView = parent.querySelector('#chartView') || parent.querySelector('#detailChartView');
+          if (tableView) tableView.style.display = view === 'table' ? 'block' : 'none';
+          if (chartView) chartView.style.display = view === 'chart' ? 'block' : 'none';
+        }
+      });
+    });
+
+    // View detail button
+    const viewDetailBtn = document.getElementById('viewDetailBtn');
+    if (viewDetailBtn) {
+      viewDetailBtn.addEventListener('click', () => {
+        if (currentBenchmarkId) {
+          // Switch to History tab
+          document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+          document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+          document.querySelector('[data-tab="history"]').classList.add('active');
+          document.getElementById('history').classList.add('active');
+          
+          showBenchmarkDetail(currentBenchmarkId);
+        }
+      });
+    }
+
+    // History
+    async function loadHistory() {
+      try {
+        const res = await fetch('/v1/benchmark/history?limit=50');
+        const data = await res.json();
+        
+        const tbody = document.querySelector('#historyTable tbody');
+        if (data.benchmarks.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted);">No benchmarks yet</td></tr>';
+        } else {
+          tbody.innerHTML = data.benchmarks.map(b => `
+            <tr>
+              <td>${b.test_id}</td>
+              <td>${new Date(b.timestamp).toLocaleString()}</td>
+              <td>${b.config.voices?.length || '-'}</td>
+              <td>${b.aggregate.avg_latency_ms} ms</td>
+              <td class="success">${b.aggregate.successful}/${b.aggregate.total_tests}</td>
+              <td>${b.aggregate.avg_chars_per_second}</td>
+              <td>${b.config.repetitions || 1}</td>
+              <td>
+                <button class="btn" style="padding: 4px 8px; font-size: 12px;" onclick="showBenchmarkDetail('${b.test_id}')">View</button>
+              </td>
+            </tr>
+          `).join('');
+        }
+      } catch (e) {
+        console.error('Failed to load history:', e);
+      }
+    }
+
+    async function showBenchmarkDetail(testId) {
+      try {
+        const res = await fetch(`/v1/benchmark/${testId}`);
+        const data = await res.json();
+
+        document.getElementById('historyDetailSection').style.display = 'block';
+        document.getElementById('detailTestId').textContent = data.test_id;
+        document.getElementById('detailDate').textContent = new Date(data.timestamp).toLocaleString();
+        document.getElementById('detailText').textContent = data.test_config.text.substring(0, 50) + '...';
+
+        // Populate system info
+        const systemInfo = data.system_info;
+        document.getElementById('detailCpuModel').textContent = systemInfo.cpu_model || 'Unknown';
+        document.getElementById('detailCpuCores').textContent = systemInfo.cpu_cores || '-';
+        document.getElementById('detailCpuFreq').textContent = systemInfo.cpu_freq_mhz ? systemInfo.cpu_freq_mhz + ' MHz' : '-';
+        document.getElementById('detailRamTotal').textContent = systemInfo.ram_total_gb ? systemInfo.ram_total_gb.toFixed(2) + ' GB' : '-';
+        document.getElementById('detailRamAvail').textContent = systemInfo.ram_available_gb ? systemInfo.ram_available_gb.toFixed(2) + ' GB' : '-';
+        document.getElementById('detailOsName').textContent = systemInfo.os_name || '-';
+        document.getElementById('detailOsVersion').textContent = systemInfo.os_version || '-';
+        document.getElementById('detailPythonVersion').textContent = systemInfo.python_version || '-';
+        document.getElementById('detailPiperVersion').textContent = systemInfo.piper_version || 'unknown';
+        document.getElementById('detailOnnxVersion').textContent = systemInfo.onnxruntime_version || '-';
+
+        // Group results by voice
+        const grouped = {};
+        data.results.forEach((r, idx) => {
+          if (!grouped[r.voice_id]) {
+            grouped[r.voice_id] = [];
+          }
+          grouped[r.voice_id].push({ ...r, runIndex: idx + 1 });
+        });
+        
+        const voiceStats = Object.entries(grouped).map(([voiceId, runs]) => {
+          const latencies = runs.map(r => r.latency_ms);
+          const avg = latencies.reduce((a, b) => a + b, 0) / latencies.length;
+          const min = Math.min(...latencies);
+          const max = Math.max(...latencies);
+          const variance = latencies.reduce((sum, l) => sum + Math.pow(l - avg, 2), 0) / latencies.length;
+          const stdDev = Math.sqrt(variance);
+          const half = Math.floor(latencies.length / 2);
+          const firstHalfAvg = latencies.slice(0, half).reduce((a, b) => a + b, 0) / half;
+          const secondHalfAvg = latencies.slice(half).reduce((a, b) => a + b, 0) / (latencies.length - half);
+          const trend = secondHalfAvg > firstHalfAvg + 5 ? '↑' : secondHalfAvg < firstHalfAvg - 5 ? '↓' : '→';
+          const avgChs = runs.reduce((a, r) => a + r.chars_per_second, 0) / runs.length;
+          
+          return { voiceId, runs, avg: Math.round(avg), min: Math.round(min), max: Math.round(max), stdDev: Math.round(stdDev * 10) / 10, trend, avgChs: Math.round(avgChs) };
+        });
+        
+        voiceStats.sort((a, b) => a.avg - b.avg);
+        
+        const tbody = document.querySelector('#detailTable tbody');
+        tbody.innerHTML = voiceStats.map((v, idx) => `
+          <tr class="voice-row" onclick="toggleDetailRow(this, ${idx})">
+            <td><span class="expand-icon" id="detail-icon-${idx}">▶</span></td>
+            <td><strong>${v.voiceId}</strong></td>
+            <td>${v.avg} ms</td>
+            <td>${v.min} ms</td>
+            <td>${v.max} ms</td>
+            <td>±${v.stdDev}</td>
+            <td class="${v.trend === '↑' ? 'trend-up' : v.trend === '↓' ? 'trend-down' : 'trend-stable'}">${v.trend}</td>
+            <td>${v.avgChs}</td>
+            <td>${v.runs.length}</td>
+          </tr>
+          <tr class="runs-detail-row" id="detail-row-${idx}" style="display: none;">
+            <td colspan="9">
+              <div class="runs-detail">
+                ${v.runs.length === 1 ? `
+                  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 8px;">
+                    <div class="stat-card" style="padding: 8px;">
+                      <div class="value" style="font-size: 16px;">${v.runs[0].audio_duration_sec.toFixed(1)}s</div>
+                      <div class="label" style="font-size: 10px;">Audio Duration</div>
+                    </div>
+                    <div class="stat-card" style="padding: 8px;">
+                      <div class="value" style="font-size: 16px;">${Math.round(v.runs[0].audio_size_bytes / 1024)}KB</div>
+                      <div class="label" style="font-size: 10px;">Audio Size</div>
+                    </div>
+                    <div class="stat-card" style="padding: 8px;">
+                      <div class="value" style="font-size: 16px;">${v.runs[0].text_chars}</div>
+                      <div class="label" style="font-size: 10px;">Characters</div>
+                    </div>
+                    <div class="stat-card" style="padding: 8px;">
+                      <div class="value" style="font-size: 16px;">${v.runs[0].text_words}</div>
+                      <div class="label" style="font-size: 10px;">Words</div>
+                    </div>
+                  </div>
+                  <div style="font-size: 11px; color: var(--text-muted);">
+                    Synthesis: ${v.runs[0].synthesis_time_ms.toFixed(1)}ms · ${v.runs[0].chars_per_second.toFixed(1)} chars/sec · ${v.runs[0].seconds_per_char.toFixed(4)}s/char
+                  </div>
+                ` : `
+                  <div class="runs-grid">
+                    ${v.runs.map((r, i) => {
+                      const isFastest = r.latency_ms === v.min;
+                      const isSlowest = r.latency_ms === v.max;
+                      return `<span class="run-chip ${isFastest ? 'fastest' : ''} ${isSlowest ? 'slowest' : ''}">Run ${i+1}: ${r.latency_ms}ms</span>`;
+                    }).join('')}
+                  </div>
+                  <div style="margin-top: 8px; font-size: 12px; color: var(--text-muted);">
+                    Total: ${v.runs.length} runs · ${v.runs[0]?.text_chars || 0} chars · ${v.runs[0]?.text_words || 0} words
+                  </div>
+                `}
+              </div>
+            </td>
+          </tr>
+        `).join('');
+
+        document.getElementById('detailAvgLatency').textContent = data.aggregate.avg_latency_ms + ' ms';
+        document.getElementById('detailMinLatency').textContent = data.aggregate.min_latency_ms + ' ms';
+        document.getElementById('detailMaxLatency').textContent = data.aggregate.max_latency_ms + ' ms';
+        document.getElementById('detailAvgThroughput').textContent = data.aggregate.avg_chars_per_second;
+
+        // Export button
+        document.getElementById('exportCsvBtn').onclick = () => {
+          window.open(`/v1/benchmark/export/${testId}`, '_blank');
+        };
+        
+        // Render chart
+        renderDetailChart(voiceStats);
+      } catch (e) {
+        console.error('Failed to load benchmark detail:', e);
+      }
+    }
+
+    // System info
+    async function loadSystemInfo() {
+      try {
+        const res = await fetch('/v1/benchmark/system');
+        const data = await res.json();
+
+        document.getElementById('sysCpuModel').textContent = data.cpu_model || 'Unknown';
+        document.getElementById('sysCpuCores').textContent = data.cpu_cores || '-';
+        document.getElementById('sysCpuFreq').textContent = data.cpu_freq_mhz ? data.cpu_freq_mhz + ' MHz' : '-';
+        document.getElementById('sysRamTotal').textContent = data.ram_total_gb + ' GB';
+        document.getElementById('sysRamAvail').textContent = data.ram_available_gb + ' GB';
+        document.getElementById('sysOs').textContent = data.os_name + ' ' + data.os_version;
+        document.getElementById('sysPyVersion').textContent = data.python_version;
+        document.getElementById('sysPid').textContent = data.process_pid;
+        document.getElementById('sysMem').textContent = data.process_memory_mb + ' MB';
+      } catch (e) {
+        console.error('Failed to load system info:', e);
+      }
+    }
+
+    document.getElementById('refreshSysBtn').addEventListener('click', loadSystemInfo);
+
+    // Load global stats for dashboard
+    async function loadGlobalStats() {
+      try {
+        const res = await fetch('/v1/benchmark/stats');
+        const data = await res.json();
+        
+        document.getElementById('totalBenchmarks').textContent = data.total_benchmarks || 0;
+        document.getElementById('globalAvgLatency').textContent = data.global_avg_latency_ms ? data.global_avg_latency_ms + ' ms' : '-';
+        document.getElementById('bestVoice').textContent = data.best_voice || '-';
+        document.getElementById('totalVoicesTested').textContent = data.total_voices_tested || 0;
+        
+        // Render performance by system
+        const container = document.getElementById('performanceBySystem');
+        if (data.by_system && data.by_system.length > 0) {
+          container.innerHTML = data.by_system.map(sys => `
+            <div class="system-group">
+              <div class="system-group-header">
+                <div class="system-group-title">${sys.system_specs.cpu_cores} cores / ${sys.system_specs.ram_total_gb}GB RAM (${sys.system_specs.os_name})</div>
+                <div class="system-group-stats">${sys.total_tests} benchmarks · Avg: ${sys.avg_latency_ms}ms</div>
+              </div>
+              <div style="font-size: 12px; color: var(--text-muted);">
+                Hostname: ${sys.system_specs.hostname || 'Unknown'}
+              </div>
+              ${sys.best_voice ? `<div style="font-size: 12px; margin-top: 4px;">Best: <strong>${sys.best_voice}</strong> (${sys.best_latency_ms}ms)</div>` : ''}
+              <div class="system-group-benchmarks">
+                ${sys.benchmarks.slice(0, 5).map(b => `
+                  <div class="benchmark-mini">
+                    <span>${b.test_id}</span>
+                    <span>${b.avg_latency_ms}ms · ${b.voices_tested} voices</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `).join('');
+        } else {
+          container.innerHTML = '<div style="color: var(--text-muted); font-size: 13px;">No benchmarks yet</div>';
+        }
+      } catch (e) {
+        console.error('Failed to load global stats:', e);
+      }
+    }
+
+    // Load voice details with model info
+    async function loadVoiceDetails() {
+      try {
+        const res = await fetch('/v1/voices');
+        const data = await res.json();
+        const voices = data.voices || data;
+        
+        const tbody = document.querySelector('#voiceDetailsTable tbody');
+        tbody.innerHTML = voices.map(v => {
+          const detail = v.detail || v;
+          const model = detail.model || 'Unknown';
+          let quality = 'low';
+          if (model.includes('high')) quality = 'high';
+          else if (model.includes('medium')) quality = 'medium';
+          
+          const modes = detail.modes ? Object.keys(detail.modes).length : 0;
+          
+          return `
+            <tr>
+              <td>${v.voice_id}</td>
+              <td>${v.name || v.voice_id}</td>
+              <td style="font-size: 11px; font-family: monospace;">${model}</td>
+              <td><span class="quality ${quality}">${quality}</span></td>
+              <td>${modes}</td>
+            </tr>
+          `;
+        }).join('');
+      } catch (e) {
+        console.error('Failed to load voice details:', e);
+      }
+    }
+
+    // Load system info for Run -> System tab
+    async function loadRunSystemInfo() {
+      try {
+        const res = await fetch('/v1/benchmark/system');
+        const data = await res.json();
+        
+        document.getElementById('sysHostname').textContent = data.hostname || '-';
+        document.getElementById('sysCpuCoresTab').textContent = data.cpu_cores || '-';
+        document.getElementById('sysCpuModelTab').textContent = data.cpu_model || '-';
+        document.getElementById('sysCpuFreqTab').textContent = data.cpu_freq_mhz ? data.cpu_freq_mhz + ' MHz' : '-';
+        document.getElementById('sysRamTotalTab').textContent = data.ram_total_gb ? data.ram_total_gb + ' GB' : '-';
+        document.getElementById('sysOsTab').textContent = data.os_name || '-';
+        document.getElementById('sysPyVersionTab').textContent = data.python_version || '-';
+        document.getElementById('sysPiperVersionTab').textContent = data.piper_version || '-';
+        document.getElementById('sysOnnxVersionTab').textContent = data.onnxruntime_version || '-';
+      } catch (e) {
+        console.error('Failed to load system info for run tab:', e);
+      }
+    }
+
+    // Initialize
+    loadVoices();
+    loadHistory();
+    loadSystemInfo();
+    loadGlobalStats();
+    loadVoiceDetails();
+    loadRunSystemInfo();
+  </script>
+</body>
+</html>
