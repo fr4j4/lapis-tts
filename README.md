@@ -2,6 +2,14 @@
 
 A local TTS server using Piper neural text-to-speech engine with in-memory audio processing and customizable voice modes.
 
+## Why Lapis TTS?
+
+I wanted to give voice to my AI assistant. I tried services like ElevenLabs, which had great voices, but the tokens ran out too fast. So I discovered Piper TTS and other local technologies, and decided to create a service to have that voice I wanted - unlimited, completely free, and local.
+
+OpenClaw can install and auto-configure the server simply by providing the repository URL.
+
+---
+
 [![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
@@ -14,6 +22,7 @@ A local TTS server using Piper neural text-to-speech engine with in-memory audio
 - **Per-voice configurations** — Unique parameters and effects per voice
 - **Annotated text** — `<whisper>text</whisper>` style tags for segment modes
 - **Web playground** — Interactive UI at `http://localhost:3000/`
+- **Benchmark suite** — Test performance, latency, and resource usage at `/benchmark.html`
 
 ## Quick Start
 
@@ -145,6 +154,7 @@ lapis-tts/
 - **Python 3.9+**
 - **ffmpeg** — `sudo apt install ffmpeg` or `brew install ffmpeg`
 - **~500MB** disk space for voice models
+- **pip packages** — see `requirements.txt`
 
 ## API Reference
 
@@ -170,6 +180,82 @@ lapis-tts/
 ### Response
 
 Returns audio binary with `Content-Disposition: attachment; filename="audio.wav"`
+
+### Benchmark Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/v1/benchmark/system` | System information (CPU, RAM, etc.) |
+| `POST` | `/v1/benchmark/run` | Run a benchmark test |
+| `GET` | `/v1/benchmark/history` | List benchmark history |
+| `GET` | `/v1/benchmark/{test_id}` | Get detailed benchmark results |
+| `DELETE` | `/v1/benchmark/{test_id}` | Delete a benchmark result |
+| `GET` | `/v1/benchmark/export/{test_id}` | Export results as CSV |
+
+#### Run Benchmark
+
+```bash
+curl -X POST http://localhost:3000/v1/benchmark/run \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Hello world, this is a test.",
+    "voices": ["lessac-en", "amy-en"],
+    "repetitions": 1
+  }'
+```
+
+**Request Parameters:**
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | string | "Hello world..." | Text to synthesize |
+| `voices` | array | all voices | List of voice IDs to test |
+| `repetitions` | int | 1 | Number of repetitions (1-10) |
+
+**Response:**
+
+```json
+{
+  "test_id": "b4b5319c",
+  "timestamp": "2026-04-08T19:31:37.338490",
+  "aggregate": {
+    "total_tests": 7,
+    "successful": 7,
+    "failed": 0,
+    "avg_latency_ms": 927.77,
+    "avg_synthesis_time_ms": 927.77,
+    "avg_audio_size_bytes": 82622.29,
+    "avg_chars_per_second": 17.6,
+    "min_latency_ms": 784.82,
+    "max_latency_ms": 1220.51
+  },
+  "system_info": {
+    "cpu_cores": 8,
+    "ram_total_gb": 31.25,
+    "process_memory_mb": 73.66
+  }
+}
+```
+
+#### Benchmark Metrics
+
+Each benchmark records per-voice metrics:
+
+| Metric | Description |
+|--------|-------------|
+| `latency_ms` | Total time from request to response |
+| `synthesis_time_ms` | Time for Piper synthesis only |
+| `audio_size_bytes` | Size of generated audio |
+| `audio_duration_ms` | Duration of audio in milliseconds |
+| `chars_per_second` | Throughput (characters processed per second) |
+| `success` | Whether synthesis succeeded |
+
+#### Benchmark Results
+
+Results are saved to `benchmark-results/benchmark_{test_id}.json` and can be:
+- Viewed in the web UI at `/benchmark.html`
+- Exported as CSV via `/v1/benchmark/export/{test_id}`
+- Compared over time to track performance improvements
 
 ## LAPIS Integration
 
